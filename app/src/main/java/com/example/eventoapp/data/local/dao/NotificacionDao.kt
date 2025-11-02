@@ -12,8 +12,11 @@ interface NotificacionDao {
     @Query("SELECT * FROM notificaciones")
     suspend fun obtenerNotificaciones(): List<Notificacion>
 
+    @Query("SELECT * FROM notificaciones WHERE id = :id")
+    suspend fun obtenerNotificacionPorId(id: Int): Notificacion?
+
     @Query("SELECT * FROM notificaciones WHERE leido = 0")
-    suspend fun obtenerNoLeidas(): List<Notificacion>
+    suspend fun obtenerNotificacionesNoLeidas(): List<Notificacion>
 
     @Update
     suspend fun actualizarNotificacion(notificacion: Notificacion)

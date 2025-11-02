@@ -15,6 +15,9 @@ interface EventoDao {
     @Query("SELECT * FROM eventos WHERE idEvento = :id")
     suspend fun obtenerEventoPorId(id: Int): Evento?
 
+    @Query("SELECT * FROM evento WHERE usuarioId = :idUsuario")
+    suspend fun obtenerEventosPorUsuario(idUsuario: Int): List<EventoEntity>
+
     @Update
     suspend fun actualizarEvento(evento: Evento)
 
