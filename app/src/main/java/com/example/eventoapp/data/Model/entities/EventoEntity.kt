@@ -1,17 +1,16 @@
-package com.example.eventoapp.data.Model.entities
+package com.example.eventoapp.data.local.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.util.Date
 
-@Entity(tableName = "evento")
+@Entity(tableName = "eventos")
 data class EventoEntity(
-    @PrimaryKey(autoGenerate = true) val idEvento: Int = 0,
-    val usuarioId: Int, // 🔹 Referencia al usuario dueño del evento
-    val titulo: String,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val usuarioId: Int,
+    val nombre: String,
     val descripcion: String,
-    val fecha: Date,
-    val estado: String,
-    val imagen: ByteArray?
+    val direccion: String,
+    val fecha: Long,
+    val duracionHoras: Int,
+    val imagenUri: String?,
 )
-

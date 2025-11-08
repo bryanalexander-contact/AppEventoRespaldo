@@ -1,26 +1,16 @@
-package com.example.eventoapp.data.Model.dao
+package com.example.eventoapp.data.local.dao
 
-import androidx.room.*
-import com.example.eventoapp.data.Model.entities.EventoEntity as Evento
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import com.example.eventoapp.data.local.entities.EventoEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface EventoDao {
+    @Insert
+    suspend fun insertarEvento(evento: EventoEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertarEvento(evento: Evento)
-
-    @Query("SELECT * FROM eventos")
-    suspend fun obtenerEventos(): List<Evento>
-
-    @Query("SELECT * FROM eventos WHERE idEvento = :id")
-    suspend fun obtenerEventoPorId(id: Int): Evento?
-
-    @Query("SELECT * FROM evento WHERE usuarioId = :idUsuario")
-    suspend fun obtenerEventosPorUsuario(idUsuario: Int): List<EventoEntity>
-
-    @Update
-    suspend fun actualizarEvento(evento: Evento)
-
-    @Delete
-    suspend fun eliminarEvento(evento: Evento)
+    @Query("SELECT * FROM eventos ORDER BY id DESC")
+    fun obtenerEventos(): Flow<List<EventoEntity>>
 }

@@ -2,42 +2,27 @@ package com.example.eventoapp.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.eventoapp.data.Model.entities.UsuarioEntity
-import com.example.eventoapp.data.Model.repository.UsuarioRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import com.example.eventoapp.data.local.entities.UsuarioEntity
+import com.example.eventoapp.data.local.repository.UsuarioRepository
 import kotlinx.coroutines.launch
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.LiveData
 
-class UsuarioViewModel(private val repository: UsuarioRepository) : ViewModel() {
+class UsuarioViewModel(private val repo: UsuarioRepository) : ViewModel() {
 
-    // Estado del formulario (para Compose)
-    private val _mensajeEstado = MutableStateFlow("")
-    val mensajeEstado: StateFlow<String> = _mensajeEstado
+    private val _usuarioActual = MutableLiveData<UsuarioEntity?>()
+    val usuarioActual: LiveData<UsuarioEntity?> = _usuarioActual
 
-    fun registrarUsuario(nombre: String, correo: String, contrasena: String, tipo: String) {
+    fun registrarUsuario(nombre: String, correo: String, contrasena: String) {
         viewModelScope.launch {
-            // Validaciones simples
-            if (nombre.isBlank() || correo.isBlank() || contrasena.isBlank()) {
-                _mensajeEstado.value = "Todos los campos son obligatorios"
-                return@launch
-            }
+            val usuario = UsuarioEntity(nombre = nombre, correo = correo, contrasena = contrasena)
+            repo.registrarUsuario(usuario)
+        }
+    }
 
-            val usuarioExistente = repository.obtenerUsuarioPorCorreo(correo)
-            if (usuarioExistente != null) {
-                _mensajeEstado.value = "El correo ya está registrado"
-                return@launch
-            }
-
-            val nuevoUsuario = UsuarioEntity(
-                nombre_user = nombre,
-                correo_user = correo,
-                contrasena_user = contrasena,
-                tipo_user = tipo,
-                fechaRegistro = java.util.Date()
-            )
-
-            repository.insertarUsuario(nuevoUsuario)
-            _mensajeEstado.value = "Usuario registrado correctamente ✅"
+    fun login(correo: String, contrasena: String) {
+        viewModelScope.launch {
+            _usuarioActual.value = repo.login(correo, contrasena)
         }
     }
 }

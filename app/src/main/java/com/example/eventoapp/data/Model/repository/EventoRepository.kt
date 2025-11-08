@@ -1,32 +1,16 @@
-package com.example.eventoapp.data.Model.repository
+package com.example.eventoapp.data.local.repository
 
-import com.example.eventoapp.data.Model.dao.EventoDao
-import com.example.eventoapp.data.Model.entities.EventoEntity
+import com.example.eventoapp.data.local.dao.EventoDao
+import com.example.eventoapp.data.local.entities.EventoEntity
+import kotlinx.coroutines.flow.Flow
 
 class EventoRepository(private val eventoDao: EventoDao) {
 
-    suspend fun insertarEvento(evento: EventoEntity) {
+    suspend fun crearEvento(evento: EventoEntity) {
         eventoDao.insertarEvento(evento)
     }
 
-    suspend fun obtenerEventos(): List<EventoEntity> {
+    fun listarEventos(): Flow<List<EventoEntity>> {
         return eventoDao.obtenerEventos()
     }
-
-    suspend fun obtenerEventoPorId(id: Int): EventoEntity? {
-        return eventoDao.obtenerEventoPorId(id)
-    }
-
-    suspend fun obtenerEventosPorUsuario(idUsuario: Int): List<EventoEntity> {
-        return eventoDao.obtenerEventosPorUsuario(idUsuario)
-    }
-
-    suspend fun actualizarEvento(evento: EventoEntity) {
-        eventoDao.actualizarEvento(evento)
-    }
-
-    suspend fun eliminarEvento(evento: EventoEntity) {
-        eventoDao.eliminarEvento(evento)
-    }
 }
-

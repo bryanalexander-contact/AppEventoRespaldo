@@ -1,24 +1,18 @@
-package com.example.eventoapp.data.Model.dao
+package com.example.eventoapp.data.local.dao
 
-import androidx.room.*
-import com.example.eventoapp.data.Model.entities.UsuarioEntity as Usuario
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import com.example.eventoapp.data.local.entities.UsuarioEntity
 
 @Dao
 interface UsuarioDao {
+    @Insert
+    suspend fun insertar(usuario: UsuarioEntity)
 
-    // Insertar usuario
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertarUsuario(usuario: Usuario)
+    @Query("SELECT * FROM usuarios WHERE correo = :correo AND contrasena = :contrasena")
+    suspend fun login(correo: String, contrasena: String): UsuarioEntity?
 
-    // Obtener todos los usuarios
     @Query("SELECT * FROM usuarios")
-    suspend fun obtenerUsuarios(): List<Usuario>
-
-    // Buscar usuario por correo
-    @Query("SELECT * FROM usuarios WHERE correo_user = :correo LIMIT 1")
-    suspend fun obtenerUsuarioPorCorreo(correo: String): Usuario?
-
-    // Eliminar usuario
-    @Delete
-    suspend fun eliminarUsuario(usuario: Usuario)
+    suspend fun obtenerTodos(): List<UsuarioEntity>
 }
