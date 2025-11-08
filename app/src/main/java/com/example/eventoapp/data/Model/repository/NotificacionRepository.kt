@@ -1,7 +1,7 @@
-package com.example.eventoapp.data.local.repository
+package com.example.eventoapp.data.Model.repository
 
-import com.example.eventoapp.data.local.dao.NotificacionDao
-import com.example.eventoapp.data.local.entities.NotificacionEntity
+import com.example.eventoapp.data.Model.dao.NotificacionDao
+import com.example.eventoapp.data.Model.entities.NotificacionEntity
 
 class NotificacionRepository(private val notificacionDao: NotificacionDao) {
 

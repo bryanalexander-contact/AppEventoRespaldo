@@ -1,4 +1,4 @@
-package com.example.eventoapp.data.local.entities
+package com.example.eventoapp.data.Model.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

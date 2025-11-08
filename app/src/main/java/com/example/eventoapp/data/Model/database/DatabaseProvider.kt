@@ -1,4 +1,4 @@
-package com.example.eventoapp.data.local.database
+package com.example.eventoapp.data.Model.database
 
 import android.content.Context
 import androidx.room.Room

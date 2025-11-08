@@ -1,7 +1,7 @@
-package com.example.eventoapp.data.local.repository
+package com.example.eventoapp.data.Model.repository
 
-import com.example.eventoapp.data.local.dao.LugarDao
-import com.example.eventoapp.data.local.entities.LugarEntity
+import com.example.eventoapp.data.Model.dao.LugarDao
+import com.example.eventoapp.data.Model.entities.LugarEntity
 
 class LugarRepository(private val lugarDao: LugarDao) {
 

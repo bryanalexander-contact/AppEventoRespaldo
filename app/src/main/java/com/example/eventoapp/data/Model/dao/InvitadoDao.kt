@@ -1,7 +1,7 @@
-package com.example.eventoapp.data.local.dao
+package com.example.eventoapp.data.Model.dao
 
 import androidx.room.*
-import com.example.eventoapp.data.local.entities.InvitadoEntity as Invitado
+import com.example.eventoapp.data.Model.entities.InvitadoEntity as Invitado
 
 @Dao
 interface InvitadoDao {

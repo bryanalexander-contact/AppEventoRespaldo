@@ -1,10 +1,10 @@
-package com.example.eventoapp.data.local.database
+package com.example.eventoapp.data.Model.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.example.eventoapp.data.local.dao.*
-import com.example.eventoapp.data.local.entities.*
+import com.example.eventoapp.data.Model.dao.*
+import com.example.eventoapp.data.Model.entities.*
 
 @Database(
     entities = [
