@@ -30,15 +30,19 @@ fun AppNavGraph(navController: NavHostController, viewModel: EventoViewModel) {
         }
 
         composable(Screen.Home.route) {
-            HomeScreen(viewModel = viewModel, onCrearEvento = {
-                navController.navigate(Screen.CrearEvento.route)
-            })
+            HomeScreen(
+                viewModel = viewModel,
+                onCrearEvento = {
+                    navController.navigate(Screen.CrearEvento.route)
+                }
+            )
         }
 
         composable(Screen.CrearEvento.route) {
-            CrearEventoScreen(viewModel = viewModel, onBack = {
-                navController.popBackStack()
-            })
+            CrearEventoScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

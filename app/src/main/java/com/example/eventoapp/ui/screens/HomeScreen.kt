@@ -1,5 +1,5 @@
 package com.example.eventoapp.ui.screens
-import androidx.compose.runtime.collectAsState
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,11 +11,13 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
 import java.io.File
-import androidx.compose.runtime.getValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(viewModel: EventoViewModel) {
+fun HomeScreen(
+    viewModel: EventoViewModel,
+    onCrearEvento: () -> Unit
+) {
     val eventos by viewModel.eventos.collectAsState()
 
     Scaffold(
@@ -24,7 +26,12 @@ fun HomeScreen(viewModel: EventoViewModel) {
                 title = { Text("EventoApp 🎉") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                ),
+                actions = {
+                    Button(onClick = onCrearEvento) {
+                        Text("➕ Crear evento")
+                    }
+                }
             )
         }
     ) { padding ->
