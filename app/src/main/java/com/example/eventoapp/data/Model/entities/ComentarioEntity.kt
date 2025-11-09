@@ -8,7 +8,7 @@ import java.util.Date
 data class ComentarioEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val mensaje: String,
-    val fecha: Date,
+    val fecha: Long,
     val autorId: Int,
     val eventoId: Int
 )

@@ -1,4 +1,4 @@
-package com.example.eventoapp.data.local.repository
+package com.example.eventoapp.data.Model.repository
 
 import com.example.eventoapp.data.local.dao.EventoDao
 import com.example.eventoapp.data.local.entities.EventoEntity

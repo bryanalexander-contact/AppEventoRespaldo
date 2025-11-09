@@ -1,9 +1,9 @@
-package com.example.eventoapp.data.local.dao
+package com.example.eventoapp.data.Model.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.example.eventoapp.data.local.entities.EventoEntity
+import com.example.eventoapp.data.Model.entities.EventoEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
