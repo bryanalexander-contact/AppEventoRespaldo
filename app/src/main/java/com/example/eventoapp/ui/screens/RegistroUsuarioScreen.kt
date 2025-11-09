@@ -9,38 +9,75 @@ import androidx.compose.ui.unit.dp
 import com.example.eventoapp.ui.viewmodel.UsuarioViewModel
 
 @Composable
-fun RegistroUsuarioScreen(usuarioViewModel: UsuarioViewModel) {
+fun RegistroUsuarioScreen(
+    usuarioViewModel: UsuarioViewModel,
+    onRegistroExitoso: () -> Unit,
+    onIrLogin: () -> Unit
+) {
     var nombre by remember { mutableStateOf("") }
     var correo by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
-    var tipo by remember { mutableStateOf("Normal") }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
 
     Column(
         Modifier
             .padding(24.dp)
-            .fillMaxWidth()
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.Center
     ) {
         Text("Registro de Usuario", style = MaterialTheme.typography.titleLarge)
-
         Spacer(Modifier.height(16.dp))
-        OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre") })
-        OutlinedTextField(value = correo, onValueChange = { correo = it }, label = { Text("Correo") })
+
+        OutlinedTextField(
+            value = nombre,
+            onValueChange = { nombre = it },
+            label = { Text("Nombre") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = correo,
+            onValueChange = { correo = it },
+            label = { Text("Correo electrónico") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.height(8.dp))
+
         OutlinedTextField(
             value = contrasena,
             onValueChange = { contrasena = it },
             label = { Text("Contraseña") },
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(16.dp))
+
         Button(
-            onClick = { usuarioViewModel.registrarUsuario(nombre, correo, contrasena) },
+            onClick = {
+                if (nombre.isNotBlank() && correo.isNotBlank() && contrasena.isNotBlank()) {
+                    usuarioViewModel.registrarUsuario(nombre, correo, contrasena)
+                    onRegistroExitoso()
+                } else {
+                    errorMsg = "Completa todos los campos"
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Registrar")
         }
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
 
+        TextButton(onClick = onIrLogin) {
+            Text("¿Ya tienes cuenta? Inicia sesión")
+        }
+
+        errorMsg?.let {
+            Text(it, color = MaterialTheme.colorScheme.error)
+        }
     }
 }

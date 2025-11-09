@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation("androidx.compose.runtime:runtime-livedata")
 
     // Jetpack Compose (usando BOM actualizado)
     implementation(platform("androidx.compose:compose-bom:2024.10.00"))

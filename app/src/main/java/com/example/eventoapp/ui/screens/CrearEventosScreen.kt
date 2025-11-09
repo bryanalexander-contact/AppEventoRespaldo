@@ -1,5 +1,6 @@
 package com.example.eventoapp.ui.screens
 
+import android.app.DatePickerDialog
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -7,6 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -17,23 +20,26 @@ import com.example.eventoapp.data.Model.entities.EventoEntity
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
 import java.io.File
 import java.io.FileOutputStream
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CrearEventoScreen(
     viewModel: EventoViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    usuarioId: Int = 1, // luego se reemplaza con el usuario logueado
+    creadorNombre: String = "Usuario Actual"
 ) {
     val context = LocalContext.current
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var direccion by remember { mutableStateOf("") }
     var duracion by remember { mutableStateOf("") }
+    var fecha by remember { mutableStateOf(System.currentTimeMillis()) }
+    var fechaTexto by remember { mutableStateOf("Seleccionar fecha") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
+    // 📸 Tomar foto
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap: Bitmap? ->
@@ -46,6 +52,20 @@ fun CrearEventoScreen(
             imageUri = Uri.fromFile(file)
         }
     }
+
+    // 📅 Selección de fecha
+    val calendar = Calendar.getInstance()
+    val datePicker = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            calendar.set(year, month, dayOfMonth)
+            fecha = calendar.timeInMillis
+            fechaTexto = "$dayOfMonth/${month + 1}/$year"
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
 
     Scaffold(
         topBar = {
@@ -82,50 +102,65 @@ fun CrearEventoScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            BasicTextField(
+            OutlinedTextField(
                 value = nombre,
                 onValueChange = { nombre = it },
+                label = { Text("Nombre del evento") },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            BasicTextField(
+            OutlinedTextField(
                 value = descripcion,
                 onValueChange = { descripcion = it },
+                label = { Text("Descripción") },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            BasicTextField(
+            OutlinedTextField(
                 value = direccion,
                 onValueChange = { direccion = it },
+                label = { Text("Dirección o lugar") },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            BasicTextField(
+            OutlinedTextField(
                 value = duracion,
                 onValueChange = { duracion = it },
+                label = { Text("Duración (en horas)") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            Button(onClick = { datePicker.show() }) {
+                Text("📅 $fechaTexto")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Button(onClick = {
-                val fechaActual = System.currentTimeMillis()
                 val duracionHoras = duracion.toIntOrNull() ?: 0
 
+                if (nombre.isBlank() || descripcion.isBlank() || direccion.isBlank()) {
+                    return@Button
+                }
+
                 val evento = EventoEntity(
-                    usuarioId = 0,
+                    usuarioId = usuarioId,
                     nombre = nombre,
                     descripcion = descripcion,
                     direccion = direccion,
-                    fecha = fechaActual,
+                    fecha = fecha,
                     duracionHoras = duracionHoras,
-                    imagenUri = imageUri?.path
+                    imagenUri = imageUri?.path,
+                    creadorNombre = creadorNombre,
+                    isGuardado = false
                 )
 
                 viewModel.crearEvento(evento)
                 onBack()
             }) {
-                Text("Guardar evento")
+                Text("💾 Guardar evento")
             }
         }
     }

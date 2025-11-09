@@ -11,6 +11,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,7 +25,7 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("EventoApp 🎉") },
+                title = { Text("EventLive 🎉") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 ),
@@ -40,11 +42,21 @@ fun HomeScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
+            if (eventos.isEmpty()) {
+                item {
+                    Text(
+                        "No hay eventos aún 😔",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
             items(eventos) { evento ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
+                        .padding(vertical = 8.dp),
                     elevation = CardDefaults.cardElevation(6.dp)
                 ) {
                     Column(Modifier.padding(12.dp)) {
@@ -52,6 +64,16 @@ fun HomeScreen(
                             text = evento.nombre,
                             style = MaterialTheme.typography.titleLarge
                         )
+
+                        if (evento.creadorNombre.isNotBlank()) {
+                            Text(
+                                text = "👤 Organizador: ${evento.creadorNombre}",
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
                         if (evento.imagenUri != null) {
                             Image(
                                 painter = rememberAsyncImagePainter(File(evento.imagenUri)),
@@ -60,14 +82,22 @@ fun HomeScreen(
                                     .height(200.dp)
                                     .fillMaxWidth()
                             )
+                            Spacer(Modifier.height(8.dp))
                         }
-                        Spacer(Modifier.height(8.dp))
-                        Text(evento.descripcion)
+
                         Text("📍 ${evento.direccion}")
-                        Text("🕒 ${evento.fecha}")
+                        Text("🕒 ${formatearFecha(evento.fecha)}")
+                        Text("⏱ Duración: ${evento.duracionHoras} horas")
+                        Spacer(Modifier.height(4.dp))
+                        Text(evento.descripcion)
                     }
                 }
             }
         }
     }
+}
+
+fun formatearFecha(timestamp: Long): String {
+    val formato = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    return formato.format(Date(timestamp))
 }
