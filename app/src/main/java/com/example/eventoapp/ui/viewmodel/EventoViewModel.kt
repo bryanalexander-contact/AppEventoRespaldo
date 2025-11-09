@@ -2,8 +2,8 @@ package com.example.eventoapp.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.eventoapp.data.local.entities.EventoEntity
-import com.example.eventoapp.data.local.repository.EventoRepository
+import com.example.eventoapp.data.Model.entities.EventoEntity
+import com.example.eventoapp.data.Model.repository.EventoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest

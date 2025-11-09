@@ -13,10 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import com.example.eventoapp.data.local.entities.EventoEntity
+import com.example.eventoapp.data.Model.entities.EventoEntity
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
 import java.io.File
 import java.io.FileOutputStream
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

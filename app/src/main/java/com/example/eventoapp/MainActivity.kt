@@ -8,8 +8,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
-import com.example.eventoapp.data.local.database.AppDatabase
-import com.example.eventoapp.data.local.repository.EventoRepository
+import com.example.eventoapp.data.Model.database.AppDatabase
+import com.example.eventoapp.data.Model.repository.EventoRepository
 import com.example.eventoapp.ui.navigation.AppNavGraph
 import com.example.eventoapp.ui.theme.EventoAppTheme
 import com.example.eventoapp.ui.viewmodel.EventoViewModel

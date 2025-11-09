@@ -15,8 +15,6 @@ fun RegistroUsuarioScreen(usuarioViewModel: UsuarioViewModel) {
     var contrasena by remember { mutableStateOf("") }
     var tipo by remember { mutableStateOf("Normal") }
 
-    val mensaje by usuarioViewModel.mensajeEstado.collectAsState()
-
     Column(
         Modifier
             .padding(24.dp)
@@ -36,13 +34,13 @@ fun RegistroUsuarioScreen(usuarioViewModel: UsuarioViewModel) {
 
         Spacer(Modifier.height(10.dp))
         Button(
-            onClick = { usuarioViewModel.registrarUsuario(nombre, correo, contrasena, tipo) },
+            onClick = { usuarioViewModel.registrarUsuario(nombre, correo, contrasena) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Registrar")
         }
 
         Spacer(Modifier.height(10.dp))
-        Text(mensaje)
+
     }
 }

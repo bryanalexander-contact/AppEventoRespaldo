@@ -1,7 +1,7 @@
 package com.example.eventoapp.data.Model.repository
 
-import com.example.eventoapp.data.local.dao.EventoDao
-import com.example.eventoapp.data.local.entities.EventoEntity
+import com.example.eventoapp.data.Model.dao.EventoDao
+import com.example.eventoapp.data.Model.entities.EventoEntity
 import kotlinx.coroutines.flow.Flow
 
 class EventoRepository(private val eventoDao: EventoDao) {
