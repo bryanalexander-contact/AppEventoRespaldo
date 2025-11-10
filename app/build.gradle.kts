@@ -40,8 +40,9 @@ android {
         compose = true
     }
 
-    // 👇 Actualizado para Kotlin 1.9.24 (compatible con Compose Compiler 1.5.14)
+    // Mantén una versión del compiler compatible con tu Kotlin (si usas Kotlin 1.9.24, 1.5.x compiler suele ser correcto).
     composeOptions {
+        // Si tienes Kotlin 1.9.24, 1.5.14 suele funcionar; si usas otra Kotlin, ajusta según la tabla de compatibilidad.
         kotlinCompilerExtensionVersion = "1.5.14"
     }
 }
@@ -53,18 +54,27 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation("androidx.compose.runtime:runtime-livedata")
 
-    // Jetpack Compose (usando BOM actualizado)
+    // Jetpack Compose BOM (gestiona versiones compatibles)
     implementation(platform("androidx.compose:compose-bom:2024.10.00"))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
 
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
+    // Compose UI (sin versiones explícitas, las gestiona el BOM)
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.ui:ui-tooling-preview")
 
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.10.00"))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
+    // Material 3 (dejar que el BOM gestione la versión)
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material3:material3-window-size-class")
+
+    // Iconos (extended): artefacto correcto (no material3-icons-extended)
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // Coil para Compose
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // ViewModel + Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
 
     // Navegación Compose
     implementation("androidx.navigation:navigation-compose:2.8.3")
@@ -74,12 +84,13 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
-    // Coil para imágenes
-    implementation("io.coil-kt:coil-compose:2.5.0")
+    // Debug
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
 
-    // ViewModel + Runtime Compose
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
+    // Android Tests
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.10.00"))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
 
     // Testing
     testImplementation(libs.junit)

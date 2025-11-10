@@ -4,18 +4,18 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.eventoapp.ui.screens.CrearEventoScreen
-import com.example.eventoapp.ui.screens.HomeScreen
-import com.example.eventoapp.ui.screens.LoginScreen
-import com.example.eventoapp.ui.screens.RegistroUsuarioScreen
+import com.example.eventoapp.ui.screens.*
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
 import com.example.eventoapp.ui.viewmodel.UsuarioViewModel
+import com.example.eventoapp.data.Model.entities.EventoEntity
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Home : Screen("home")
     object CrearEvento : Screen("crear_evento")
-    object Registro : Screen("registro") // nueva ruta
+    object Registro : Screen("registro")
+    object Eventos : Screen("eventos") // pantalla de lista de eventos
+    object EventoDetalle : Screen("evento_detalle") // pantalla de detalle
 }
 
 @Composable
@@ -31,12 +31,12 @@ fun AppNavGraph(
             LoginScreen(
                 usuarioViewModel = usuarioViewModel,
                 onLoginSuccess = {
-                    navController.navigate(Screen.Home.route) {
+                    navController.navigate(Screen.Eventos.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
                 onIrRegistro = {
-                    navController.navigate(Screen.Registro.route) // navegar a registro
+                    navController.navigate(Screen.Registro.route)
                 }
             )
         }
@@ -46,19 +46,17 @@ fun AppNavGraph(
             RegistroUsuarioScreen(
                 usuarioViewModel = usuarioViewModel,
                 onRegistroExitoso = {
-                    // Una vez registrado, ir a Home
-                    navController.navigate(Screen.Home.route) {
+                    navController.navigate(Screen.Eventos.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
                 onIrLogin = {
-                    // Volver al Login
                     navController.popBackStack()
                 }
             )
         }
 
-        // Pantalla Home
+        // Pantalla Home (opcional, si quieres mantenerla como inicio alternativo)
         composable(Screen.Home.route) {
             HomeScreen(
                 viewModel = eventoViewModel,
@@ -72,6 +70,33 @@ fun AppNavGraph(
                 viewModel = eventoViewModel,
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        // -------------------------------
+        // Pantalla de eventos con tarjetas
+        // -------------------------------
+        composable(Screen.Eventos.route) {
+            EventoScreen(
+                viewModel = eventoViewModel,
+                navController = navController
+            )
+        }
+
+        // -------------------------------
+        // Pantalla de detalle del evento
+        // -------------------------------
+        composable(Screen.EventoDetalle.route) {
+            val evento = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<EventoEntity>("evento")
+
+            evento?.let {
+                EventoDetalleScreen(
+                    evento = it,
+                    viewModel = eventoViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
