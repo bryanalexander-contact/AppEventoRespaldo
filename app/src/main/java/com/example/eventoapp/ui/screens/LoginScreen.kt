@@ -17,15 +17,13 @@ fun LoginScreen(
 ) {
     var correo by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
-    var errorMsg by remember { mutableStateOf<String?>(null) }
 
     val usuarioActual by usuarioViewModel.usuarioActual.observeAsState()
+    val mensajeError by usuarioViewModel.mensajeError.observeAsState()
 
     LaunchedEffect(usuarioActual) {
         if (usuarioActual != null) {
             onLoginSuccess()
-        } else if (errorMsg != null) {
-            // nada, ya mostrado
         }
     }
 
@@ -62,7 +60,7 @@ fun LoginScreen(
                 if (correo.isNotBlank() && contrasena.isNotBlank()) {
                     usuarioViewModel.login(correo, contrasena)
                 } else {
-                    errorMsg = "Completa todos los campos"
+                    usuarioViewModel.logout() // limpia estado anterior
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -76,7 +74,8 @@ fun LoginScreen(
             Text("¿No tienes cuenta? Regístrate aquí")
         }
 
-        errorMsg?.let {
+        mensajeError?.let {
+            Spacer(Modifier.height(8.dp))
             Text(it, color = MaterialTheme.colorScheme.error)
         }
     }

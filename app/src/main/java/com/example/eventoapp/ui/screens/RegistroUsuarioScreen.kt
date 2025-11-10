@@ -1,5 +1,5 @@
 package com.example.eventoapp.ui.screens
-
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,15 +17,16 @@ fun RegistroUsuarioScreen(
     var nombre by remember { mutableStateOf("") }
     var correo by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
-    var errorMsg by remember { mutableStateOf<String?>(null) }
+
+    val mensajeError by usuarioViewModel.mensajeError.observeAsState()
 
     Column(
         Modifier
-            .padding(24.dp)
-            .fillMaxWidth(),
+            .fillMaxSize()
+            .padding(24.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Registro de Usuario", style = MaterialTheme.typography.titleLarge)
+        Text("Registro de Usuario", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(16.dp))
 
         OutlinedTextField(
@@ -62,7 +63,7 @@ fun RegistroUsuarioScreen(
                     usuarioViewModel.registrarUsuario(nombre, correo, contrasena)
                     onRegistroExitoso()
                 } else {
-                    errorMsg = "Completa todos los campos"
+                    usuarioViewModel.logout() // limpia estado anterior
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -76,7 +77,8 @@ fun RegistroUsuarioScreen(
             Text("¿Ya tienes cuenta? Inicia sesión")
         }
 
-        errorMsg?.let {
+        mensajeError?.let {
+            Spacer(Modifier.height(8.dp))
             Text(it, color = MaterialTheme.colorScheme.error)
         }
     }
