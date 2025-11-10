@@ -1,6 +1,7 @@
 package com.example.eventoapp.ui.screens
 
-import android.os.Parcelable
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,8 +16,6 @@ import com.example.eventoapp.ui.viewmodel.EventoViewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlinx.parcelize.Parcelize
-import androidx.compose.foundation.clickable
 
 // -----------------------------
 // Tarjeta de evento (reutilizable)
@@ -43,7 +42,7 @@ fun EventoCard(
             evento.imagenUri?.let {
                 Image(
                     painter = rememberAsyncImagePainter(File(it)),
-                    contentDescription = null,
+                    contentDescription = evento.nombre,
                     modifier = Modifier
                         .height(200.dp)
                         .fillMaxWidth()
@@ -86,7 +85,11 @@ fun EventoScreen(
         ) {
             if (eventos.isEmpty()) {
                 item {
-                    Text("No hay eventos aún 😔", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(16.dp))
+                    Text(
+                        "No hay eventos aún 😔",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
             }
 
