@@ -9,7 +9,7 @@ import com.example.eventoapp.data.Model.entities.UsuarioEntity
 
 @Database(
     entities = [UsuarioEntity::class, EventoEntity::class],
-    version = 1,
+    version = 2, // Incrementa cada vez que cambies la estructura
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
