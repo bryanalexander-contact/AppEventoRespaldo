@@ -11,70 +11,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.eventoapp.data.Model.entities.EventoEntity
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 
-// -----------------------------
-// Tarjeta de evento (reutilizable)
-// -----------------------------
-@Composable
-fun EventoCard(
-    evento: EventoEntity,
-    onClick: (EventoEntity) -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clickable { onClick(evento) },
-        elevation = CardDefaults.cardElevation(6.dp)
-    ) {
-        Column(Modifier.padding(12.dp)) {
-            Text(evento.nombre, style = MaterialTheme.typography.titleLarge)
-            if (evento.creadorNombre.isNotBlank())
-                Text("👤 Organizador: ${evento.creadorNombre}", style = MaterialTheme.typography.labelLarge)
-
-            Spacer(Modifier.height(8.dp))
-
-            evento.imagenUri?.let {
-                Image(
-                    painter = rememberAsyncImagePainter(File(it)),
-                    contentDescription = evento.nombre,
-                    modifier = Modifier
-                        .height(200.dp)
-                        .fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-            }
-
-            Text("📍 ${evento.direccion}")
-            Text("🕒 ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(evento.fecha))}")
-            Text("⏱ Duración: ${evento.duracionHoras} horas")
-            Spacer(Modifier.height(4.dp))
-            Text(evento.descripcion)
-        }
-    }
-}
-
-// -----------------------------
-// Pantalla de eventos
-// -----------------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventoScreen(
     viewModel: EventoViewModel,
-    navController: NavController // NavController para navegar al detalle
+    navController: NavController,
+    onCrearEvento: () -> Unit
 ) {
-    val eventos by viewModel.eventos.collectAsState()
+    // Valor inicial para evitar conflictos con StateFlow
+    val eventos by viewModel.eventos.collectAsState(initial = emptyList())
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("EventLive 🎉") },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                actions = {
+                    Button(onClick = onCrearEvento) {
+                        Text("➕ Crear evento")
+                    }
+                }
             )
         }
     ) { padding ->
@@ -94,10 +55,46 @@ fun EventoScreen(
             }
 
             items(eventos) { evento ->
-                EventoCard(evento = evento) {
-                    // Navegar a detalle usando NavController
-                    navController.currentBackStackEntry?.savedStateHandle?.set("evento", it)
-                    navController.navigate("evento_detalle")
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .clickable {
+                            // Navegar al detalle pasando el id del evento
+                            navController.navigate("evento_detalle/${evento.id}")
+                        },
+                    elevation = CardDefaults.cardElevation(6.dp)
+                ) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text(evento.nombre, style = MaterialTheme.typography.titleLarge)
+
+                        if (evento.creadorNombre.isNotBlank()) {
+                            Text(
+                                "👤 Organizador: ${evento.creadorNombre}",
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        evento.imagenUri?.let { uriStr ->
+                            Image(
+                                painter = rememberAsyncImagePainter(File(uriStr)),
+                                contentDescription = evento.nombre,
+                                modifier = Modifier
+                                    .height(200.dp)
+                                    .fillMaxWidth()
+                            )
+                            Spacer(Modifier.height(8.dp))
+                        }
+
+                        Text("📍 ${evento.direccion}")
+                        // <-- usamos la función del ViewModel para evitar ambigüedad
+                        Text("🕒 ${viewModel.formatearFecha(evento.fecha)}")
+                        Text("⏱ Duración: ${evento.duracionHoras} horas")
+                        Spacer(Modifier.height(4.dp))
+                        Text(evento.descripcion)
+                    }
                 }
             }
         }

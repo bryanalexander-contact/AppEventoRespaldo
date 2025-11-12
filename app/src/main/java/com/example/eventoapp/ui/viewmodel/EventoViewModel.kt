@@ -1,7 +1,11 @@
 package com.example.eventoapp.ui.viewmodel
 
+import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.eventoapp.data.Model.entities.EventoEntity
@@ -11,8 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileOutputStream
-import java.io.InputStream
+import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -25,7 +28,6 @@ class EventoViewModel(private val repo: EventoRepository) : ViewModel() {
         cargarEventos()
     }
 
-    // 🟢 Cargar eventos
     fun cargarEventos() {
         viewModelScope.launch {
             repo.listarEventos().collectLatest { lista ->
@@ -34,36 +36,54 @@ class EventoViewModel(private val repo: EventoRepository) : ViewModel() {
         }
     }
 
-    // 🟢 Crear evento
     fun crearEvento(evento: EventoEntity) {
         viewModelScope.launch {
             repo.crearEvento(evento)
         }
     }
 
-    // 🟢 Formatear fecha desde Long → String legible
     fun formatearFecha(timestamp: Long): String {
         val formato = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         return formato.format(Date(timestamp))
     }
 
-    // 🟢 Guardar evento localmente (como “descargado”)
+    /**
+     * 🔹 Guardar imagen del evento en galería real del teléfono
+     */
     fun guardarEventoLocal(context: Context, evento: EventoEntity) {
         viewModelScope.launch {
             try {
-                // Carpeta EventLive
-                val carpeta = File(context.getExternalFilesDir(null), "EventLive")
-                if (!carpeta.exists()) carpeta.mkdirs()
-
-                // Copiar imagen si existe
                 evento.imagenUri?.let { uriStr ->
-                    val uri = Uri.parse(uriStr)
-                    val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-                    val destino = File(carpeta, "evento_${evento.id}.jpg")
-                    val outputStream = FileOutputStream(destino)
-                    inputStream?.copyTo(outputStream)
-                    outputStream.close()
-                    inputStream?.close()
+                    val inputStream = context.contentResolver.openInputStream(Uri.parse(uriStr))
+                    val filename = "evento_${evento.id}.jpg"
+
+                    if (inputStream != null) {
+                        val outputStream: OutputStream? =
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                val contentValues = ContentValues().apply {
+                                    put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                                    put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/EventLive")
+                                }
+                                val uri: Uri? = context.contentResolver.insert(
+                                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                    contentValues
+                                )
+                                uri?.let { context.contentResolver.openOutputStream(it) }
+                            } else {
+                                // Android < Q
+                                val carpeta = File(
+                                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+                                    "EventLive"
+                                )
+                                if (!carpeta.exists()) carpeta.mkdirs()
+                                val file = File(carpeta, filename)
+                                file.outputStream()
+                            }
+
+                        outputStream?.use { inputStream.copyTo(it) }
+                        inputStream.close()
+                    }
                 }
 
                 // Marcar evento como guardado en BD
@@ -76,7 +96,6 @@ class EventoViewModel(private val repo: EventoRepository) : ViewModel() {
         }
     }
 
-    // 🟢 Obtener eventos guardados localmente
     fun obtenerGuardados(): List<EventoEntity> {
         return _eventos.value.filter { it.isGuardado }
     }

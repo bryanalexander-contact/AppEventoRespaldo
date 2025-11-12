@@ -5,23 +5,22 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import coil.compose.rememberAsyncImagePainter
-import com.example.eventoapp.data.Model.entities.EventoEntity
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventoDetalleScreen(
-    evento: EventoEntity,
+    eventoId: Int,
     viewModel: EventoViewModel,
     onBack: () -> Unit
 ) {
@@ -29,10 +28,20 @@ fun EventoDetalleScreen(
     var comentario by remember { mutableStateOf(TextFieldValue("")) }
     val comentarios = remember { mutableStateListOf<String>() }
 
+    // Obtener evento desde ViewModel
+    val evento by remember { derivedStateOf { viewModel.eventos.value.firstOrNull { it.id == eventoId } } }
+
+    if (evento == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Cargando evento...")
+        }
+        return
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(evento.nombre) },
+                title = { Text(evento!!.nombre) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
@@ -48,7 +57,7 @@ fun EventoDetalleScreen(
                     .padding(padding)
                     .padding(16.dp)
             ) {
-                evento.imagenUri?.let { uri ->
+                evento!!.imagenUri?.let { uri ->
                     Image(
                         painter = rememberAsyncImagePainter(File(uri)),
                         contentDescription = null,
@@ -58,7 +67,7 @@ fun EventoDetalleScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Button(onClick = {
-                        viewModel.guardarEventoLocal(context, evento)
+                        viewModel.guardarEventoLocal(context, evento!!)
                         Toast.makeText(context, "Imagen descargada en EventLive ✅", Toast.LENGTH_SHORT).show()
                     }) {
                         Text("📥 Descargar foto")
@@ -66,22 +75,19 @@ fun EventoDetalleScreen(
                     Spacer(Modifier.height(16.dp))
                 }
 
-                Text("👤 Organizador: ${evento.creadorNombre}")
-                Text("📍 Dirección: ${evento.direccion}")
-                Text("🕒 Fecha: ${viewModel.formatearFecha(evento.fecha)}")
-                Text("⏱ Duración: ${evento.duracionHoras} horas")
+                Text("👤 Organizador: ${evento!!.creadorNombre}")
+                Text("📍 Dirección: ${evento!!.direccion}")
+                Text("🕒 Fecha: ${viewModel.formatearFecha(evento!!.fecha)}")
+                Text("⏱ Duración: ${evento!!.duracionHoras} horas")
                 Spacer(Modifier.height(8.dp))
-                Text(evento.descripcion)
+                Text(evento!!.descripcion)
                 Spacer(Modifier.height(16.dp))
 
                 Text("💬 Comentarios", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
-                comentarios.forEach { c ->
-                    Text("- $c")
-                }
+                comentarios.forEach { c -> Text("- $c") }
 
                 Spacer(Modifier.height(8.dp))
-
                 OutlinedTextField(
                     value = comentario,
                     onValueChange = { comentario = it },
@@ -101,9 +107,7 @@ fun EventoDetalleScreen(
                         comentarios.add(comentario.text)
                         comentario = TextFieldValue("")
                     }
-                }) {
-                    Text("Enviar comentario")
-                }
+                }) { Text("Enviar comentario") }
             }
         }
     )

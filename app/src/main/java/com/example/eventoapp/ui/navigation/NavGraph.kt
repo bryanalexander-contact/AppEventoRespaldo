@@ -67,7 +67,11 @@ fun AppNavGraph(
         composable(Screen.Eventos.route) {
             EventoScreen(
                 viewModel = eventoViewModel,
-                navController = navController
+                navController = navController,
+                onCrearEvento = {
+                    // Navega a la pantalla de crear evento
+                    navController.navigate(Screen.CrearEvento.route)
+                }
             )
         }
 
@@ -77,15 +81,12 @@ fun AppNavGraph(
             arguments = listOf(navArgument("eventoId") { type = NavType.IntType })
         ) { backStackEntry ->
             val eventoId = backStackEntry.arguments?.getInt("eventoId") ?: 0
-            val evento = eventoViewModel.eventos.value.firstOrNull { it.id == eventoId }
 
-            evento?.let {
-                EventoDetalleScreen(
-                    evento = it,
-                    viewModel = eventoViewModel,
-                    onBack = { navController.popBackStack() }
-                )
-            }
+            EventoDetalleScreen(
+                eventoId = eventoId,
+                viewModel = eventoViewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }
