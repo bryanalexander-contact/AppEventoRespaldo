@@ -1,13 +1,16 @@
 package com.example.eventoapp.ui.screens
 
 import android.app.DatePickerDialog
+import android.content.ContentValues
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -18,8 +21,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.eventoapp.data.Model.entities.EventoEntity
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
-import java.io.File
-import java.io.FileOutputStream
+import java.io.OutputStream
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,7 +29,7 @@ import java.util.*
 fun CrearEventoScreen(
     viewModel: EventoViewModel,
     onBack: () -> Unit,
-    usuarioId: Int = 1, // luego se reemplaza con el usuario logueado
+    usuarioId: Int = 1,
     creadorNombre: String = "Usuario Actual"
 ) {
     val context = LocalContext.current
@@ -39,21 +41,34 @@ fun CrearEventoScreen(
     var fechaTexto by remember { mutableStateOf("Seleccionar fecha") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // 📸 Tomar foto
+    // 📸 Tomar foto y guardarla directamente en galería
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap: Bitmap? ->
         bitmap?.let {
             val filename = "evento_${System.currentTimeMillis()}.jpg"
-            val file = File(context.filesDir, filename)
-            FileOutputStream(file).use { out ->
-                it.compress(Bitmap.CompressFormat.JPEG, 90, out)
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/EventLive")
             }
-            imageUri = Uri.fromFile(file)
+
+            val uri = context.contentResolver.insert(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                contentValues
+            )
+
+            uri?.let { safeUri ->
+                val outputStream: OutputStream? = context.contentResolver.openOutputStream(safeUri)
+                outputStream?.use { stream ->
+                    it.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+                }
+                imageUri = safeUri // ✅ URI pública (visible en galería)
+            }
         }
     }
 
-    // 📅 Selección de fecha
+    // 📅 Date Picker
     val calendar = Calendar.getInstance()
     val datePicker = DatePickerDialog(
         context,
@@ -100,8 +115,6 @@ fun CrearEventoScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
             OutlinedTextField(
                 value = nombre,
                 onValueChange = { nombre = it },
@@ -130,8 +143,6 @@ fun CrearEventoScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
             Button(onClick = { datePicker.show() }) {
                 Text("📅 $fechaTexto")
             }
@@ -140,10 +151,7 @@ fun CrearEventoScreen(
 
             Button(onClick = {
                 val duracionHoras = duracion.toIntOrNull() ?: 0
-
-                if (nombre.isBlank() || descripcion.isBlank() || direccion.isBlank()) {
-                    return@Button
-                }
+                if (nombre.isBlank() || descripcion.isBlank() || direccion.isBlank() || imageUri == null) return@Button
 
                 val evento = EventoEntity(
                     usuarioId = usuarioId,
@@ -152,9 +160,9 @@ fun CrearEventoScreen(
                     direccion = direccion,
                     fecha = fecha,
                     duracionHoras = duracionHoras,
-                    imagenUri = imageUri?.path,
+                    imagenUri = imageUri.toString(), // ✅ URI pública
                     creadorNombre = creadorNombre,
-                    isGuardado = false
+                    isGuardado = true
                 )
 
                 viewModel.crearEvento(evento)

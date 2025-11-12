@@ -28,11 +28,15 @@ fun EventoDetalleScreen(
     var comentario by remember { mutableStateOf(TextFieldValue("")) }
     val comentarios = remember { mutableStateListOf<String>() }
 
-    // Obtener evento desde ViewModel
-    val evento by remember { derivedStateOf { viewModel.eventos.value.firstOrNull { it.id == eventoId } } }
+    // Observamos la lista de eventos y obtenemos el actual
+    val eventos by viewModel.eventos.collectAsState()
+    val evento = eventos.firstOrNull { it.id == eventoId }
 
     if (evento == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
             Text("Cargando evento...")
         }
         return
@@ -41,7 +45,7 @@ fun EventoDetalleScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(evento!!.nombre) },
+                title = { Text(evento.nombre) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
@@ -57,7 +61,8 @@ fun EventoDetalleScreen(
                     .padding(padding)
                     .padding(16.dp)
             ) {
-                evento!!.imagenUri?.let { uri ->
+                // Imagen del evento
+                evento.imagenUri?.let { uri ->
                     Image(
                         painter = rememberAsyncImagePainter(File(uri)),
                         contentDescription = null,
@@ -66,23 +71,30 @@ fun EventoDetalleScreen(
                             .height(250.dp)
                     )
                     Spacer(Modifier.height(8.dp))
+
                     Button(onClick = {
-                        viewModel.guardarEventoLocal(context, evento!!)
-                        Toast.makeText(context, "Imagen descargada en EventLive ✅", Toast.LENGTH_SHORT).show()
+                        viewModel.guardarEventoLocal(context, evento)
+                        Toast.makeText(
+                            context,
+                            "Imagen descargada en EventLive ✅",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }) {
                         Text("📥 Descargar foto")
                     }
                     Spacer(Modifier.height(16.dp))
                 }
 
-                Text("👤 Organizador: ${evento!!.creadorNombre}")
-                Text("📍 Dirección: ${evento!!.direccion}")
-                Text("🕒 Fecha: ${viewModel.formatearFecha(evento!!.fecha)}")
-                Text("⏱ Duración: ${evento!!.duracionHoras} horas")
+                // Información del evento
+                Text("👤 Organizador: ${evento.creadorNombre}")
+                Text("📍 Dirección: ${evento.direccion}")
+                Text("🕒 Fecha: ${viewModel.formatearFecha(evento.fecha)}")
+                Text("⏱ Duración: ${evento.duracionHoras} horas")
                 Spacer(Modifier.height(8.dp))
-                Text(evento!!.descripcion)
+                Text(evento.descripcion)
                 Spacer(Modifier.height(16.dp))
 
+                // Comentarios
                 Text("💬 Comentarios", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
                 comentarios.forEach { c -> Text("- $c") }
