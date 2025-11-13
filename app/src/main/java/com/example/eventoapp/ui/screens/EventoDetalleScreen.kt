@@ -3,7 +3,6 @@ package com.example.eventoapp.ui.screens
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -15,7 +14,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,10 +23,6 @@ fun EventoDetalleScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    var comentario by remember { mutableStateOf(TextFieldValue("")) }
-    val comentarios = remember { mutableStateListOf<String>() }
-
-    // Observamos la lista de eventos y obtenemos el actual
     val eventos by viewModel.eventos.collectAsState()
     val evento = eventos.firstOrNull { it.id == eventoId }
 
@@ -50,77 +44,42 @@ fun EventoDetalleScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors()
-            )
-        },
-        content = { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp)
-            ) {
-                // Imagen del evento
-                evento.imagenUri?.let { uri ->
-                    Image(
-                        painter = rememberAsyncImagePainter(File(uri)),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(250.dp)
-                    )
-                    Spacer(Modifier.height(8.dp))
-
-                    Button(onClick = {
-                        viewModel.guardarEventoLocal(context, evento)
-                        Toast.makeText(
-                            context,
-                            "Imagen descargada en EventLive ✅",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }) {
-                        Text("📥 Descargar foto")
-                    }
-                    Spacer(Modifier.height(16.dp))
                 }
-
-                // Información del evento
-                Text("👤 Organizador: ${evento.creadorNombre}")
-                Text("📍 Dirección: ${evento.direccion}")
-                Text("🕒 Fecha: ${viewModel.formatearFecha(evento.fecha)}")
-                Text("⏱ Duración: ${evento.duracionHoras} horas")
-                Spacer(Modifier.height(8.dp))
-                Text(evento.descripcion)
-                Spacer(Modifier.height(16.dp))
-
-                // Comentarios
-                Text("💬 Comentarios", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-                comentarios.forEach { c -> Text("- $c") }
-
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = comentario,
-                    onValueChange = { comentario = it },
-                    label = { Text("Agregar comentario") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardActions = KeyboardActions(onDone = {
-                        if (comentario.text.isNotBlank()) {
-                            comentarios.add(comentario.text)
-                            comentario = TextFieldValue("")
-                        }
-                    })
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
+        ) {
+            evento.imagenUri?.let { uri ->
+                val fixedUri = if (uri.startsWith("file://")) uri else "file://$uri"
+                Image(
+                    painter = rememberAsyncImagePainter(fixedUri),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp)
                 )
 
                 Spacer(Modifier.height(8.dp))
                 Button(onClick = {
-                    if (comentario.text.isNotBlank()) {
-                        comentarios.add(comentario.text)
-                        comentario = TextFieldValue("")
-                    }
-                }) { Text("Enviar comentario") }
+                    viewModel.guardarEventoLocal(context, evento)
+                    Toast.makeText(context, "Imagen descargada en EventLive ✅", Toast.LENGTH_SHORT).show()
+                }) {
+                    Text("📥 Descargar foto")
+                }
+                Spacer(Modifier.height(16.dp))
             }
+
+            Text("👤 Organizador: ${evento.creadorNombre}")
+            Text("📍 Dirección: ${evento.direccion}")
+            Text("🕒 Fecha: ${viewModel.formatearFecha(evento.fecha)}")
+            Text("⏱ Duración: ${evento.duracionHoras} horas")
+            Spacer(Modifier.height(8.dp))
+            Text(evento.descripcion)
         }
-    )
+    }
 }

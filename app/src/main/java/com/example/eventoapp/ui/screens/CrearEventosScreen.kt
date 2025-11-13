@@ -4,7 +4,6 @@ import android.app.DatePickerDialog
 import android.content.ContentValues
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -33,20 +32,24 @@ fun CrearEventoScreen(
     creadorNombre: String = "Usuario Actual"
 ) {
     val context = LocalContext.current
+
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var direccion by remember { mutableStateOf("") }
     var duracion by remember { mutableStateOf("") }
     var fecha by remember { mutableStateOf(System.currentTimeMillis()) }
     var fechaTexto by remember { mutableStateOf("Seleccionar fecha") }
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // 📸 Tomar foto y guardarla directamente en galería
-    val launcher = rememberLauncherForActivityResult(
+    // Aquí guardaremos un **string limpio** file://… para Room
+    var imagePath by remember { mutableStateOf<String?>(null) }
+
+    // 📸 Tomar foto y guardarla en Pictures/EventLive como archivo REAL
+    val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
+    ) { bitmap ->
         bitmap?.let {
             val filename = "evento_${System.currentTimeMillis()}.jpg"
+
             val contentValues = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
                 put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
@@ -58,12 +61,22 @@ fun CrearEventoScreen(
                 contentValues
             )
 
-            uri?.let { safeUri ->
-                val outputStream: OutputStream? = context.contentResolver.openOutputStream(safeUri)
-                outputStream?.use { stream ->
-                    it.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+            uri?.let { realUri ->
+                val output: OutputStream? = context.contentResolver.openOutputStream(realUri)
+                output?.use { stream ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
                 }
-                imageUri = safeUri // ✅ URI pública (visible en galería)
+
+                // Convertimos la URI content:// a file:// para Coil ✔
+                val filePathQuery = arrayOf(MediaStore.Images.Media.DATA)
+                val cursor = context.contentResolver.query(realUri, filePathQuery, null, null, null)
+
+                cursor?.use {
+                    if (it.moveToFirst()) {
+                        val rawPath = it.getString(0)
+                        imagePath = "file://$rawPath" // 🔥 ESTA ES LA CLAVE
+                    }
+                }
             }
         }
     }
@@ -94,18 +107,22 @@ fun CrearEventoScreen(
             )
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            Button(onClick = { launcher.launch(null) }) {
+
+            // 📸 Botón de foto
+            Button(onClick = { cameraLauncher.launch(null) }) {
                 Text("📸 Tomar foto")
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            imageUri?.let {
+            // Mostrar la foto guardada
+            imagePath?.let {
                 Image(
                     painter = rememberAsyncImagePainter(it),
                     contentDescription = null,
@@ -149,9 +166,17 @@ fun CrearEventoScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // ✔ Botón guardar
             Button(onClick = {
+
                 val duracionHoras = duracion.toIntOrNull() ?: 0
-                if (nombre.isBlank() || descripcion.isBlank() || direccion.isBlank() || imageUri == null) return@Button
+
+                if (
+                    nombre.isBlank() ||
+                    descripcion.isBlank() ||
+                    direccion.isBlank() ||
+                    imagePath == null
+                ) return@Button
 
                 val evento = EventoEntity(
                     usuarioId = usuarioId,
@@ -160,7 +185,7 @@ fun CrearEventoScreen(
                     direccion = direccion,
                     fecha = fecha,
                     duracionHoras = duracionHoras,
-                    imagenUri = imageUri.toString(), // ✅ URI pública
+                    imagenUri = imagePath,   // ✔ Perfecto para Coil
                     creadorNombre = creadorNombre,
                     isGuardado = true
                 )

@@ -12,7 +12,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -61,29 +60,19 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                         .clickable {
-                            // Navegar al detalle pasando el id del evento
                             navController.navigate("evento_detalle/${evento.id}")
                         },
                     elevation = CardDefaults.cardElevation(6.dp)
                 ) {
                     Column(Modifier.padding(12.dp)) {
-                        Text(
-                            text = evento.nombre,
-                            style = MaterialTheme.typography.titleLarge
-                        )
-
-                        if (evento.creadorNombre.isNotBlank()) {
-                            Text(
-                                text = "👤 Organizador: ${evento.creadorNombre}",
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
+                        Text(evento.nombre, style = MaterialTheme.typography.titleLarge)
 
                         Spacer(Modifier.height(8.dp))
 
-                        if (evento.imagenUri != null) {
+                        evento.imagenUri?.let { uri ->
+                            val fixedUri = if (uri.startsWith("file://")) uri else "file://$uri"
                             Image(
-                                painter = rememberAsyncImagePainter(File(evento.imagenUri)),
+                                painter = rememberAsyncImagePainter(fixedUri),
                                 contentDescription = null,
                                 modifier = Modifier
                                     .height(200.dp)
