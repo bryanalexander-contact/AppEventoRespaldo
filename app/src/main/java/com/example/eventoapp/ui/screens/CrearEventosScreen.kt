@@ -3,7 +3,6 @@ package com.example.eventoapp.ui.screens
 import android.app.DatePickerDialog
 import android.content.ContentValues
 import android.graphics.Bitmap
-import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -15,13 +14,21 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.eventoapp.data.Model.entities.EventoEntity
+import com.example.eventoapp.ui.animations.ClickScaleAnimation
+import com.example.eventoapp.ui.animations.FadeInAnimation
+import com.example.eventoapp.ui.components.AnimatedTextField
+import com.example.eventoapp.ui.utils.Validators
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.OutputStream
 import java.util.*
+import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,6 +39,7 @@ fun CrearEventoScreen(
     creadorNombre: String = "Usuario Actual"
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
@@ -40,48 +48,42 @@ fun CrearEventoScreen(
     var fecha by remember { mutableStateOf(System.currentTimeMillis()) }
     var fechaTexto by remember { mutableStateOf("Seleccionar fecha") }
 
-    // Aquí guardaremos un **string limpio** file://… para Room
     var imagePath by remember { mutableStateOf<String?>(null) }
 
-    // 📸 Tomar foto y guardarla en Pictures/EventLive como archivo REAL
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
+    ) { bitmap: Bitmap? ->
         bitmap?.let {
             val filename = "evento_${System.currentTimeMillis()}.jpg"
-
             val contentValues = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
                 put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
                 put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/EventLive")
             }
-
-            val uri = context.contentResolver.insert(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                contentValues
-            )
-
+            val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
             uri?.let { realUri ->
                 val output: OutputStream? = context.contentResolver.openOutputStream(realUri)
                 output?.use { stream ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+                    it.compress(Bitmap.CompressFormat.JPEG, 90, stream)
                 }
-
-                // Convertimos la URI content:// a file:// para Coil ✔
-                val filePathQuery = arrayOf(MediaStore.Images.Media.DATA)
-                val cursor = context.contentResolver.query(realUri, filePathQuery, null, null, null)
-
+                // try to obtain a file path if available (some devices may keep only content://)
+                val projection = arrayOf(MediaStore.Images.Media.DATA)
+                val cursor = context.contentResolver.query(realUri, projection, null, null, null)
                 cursor?.use {
                     if (it.moveToFirst()) {
                         val rawPath = it.getString(0)
-                        imagePath = "file://$rawPath" // 🔥 ESTA ES LA CLAVE
+                        imagePath = "file://$rawPath"
+                    } else {
+                        imagePath = realUri.toString() // fallback to content://
                     }
+                } ?: run {
+                    imagePath = realUri.toString()
                 }
             }
         }
     }
 
-    // 📅 Date Picker
+    // Date picker
     val calendar = Calendar.getInstance()
     val datePicker = DatePickerDialog(
         context,
@@ -107,93 +109,123 @@ fun CrearEventoScreen(
             )
         }
     ) { padding ->
+        FadeInAnimation {
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(16.dp)
+            ) {
+                Button(onClick = { cameraLauncher.launch(null) }) {
+                    Text("📸 Tomar foto")
+                }
 
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
-        ) {
+                Spacer(Modifier.height(12.dp))
 
-            // 📸 Botón de foto
-            Button(onClick = { cameraLauncher.launch(null) }) {
-                Text("📸 Tomar foto")
-            }
+                imagePath?.let {
+                    Image(
+                        painter = rememberAsyncImagePainter(it),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(200.dp)
+                            .padding(8.dp)
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Mostrar la foto guardada
-            imagePath?.let {
-                Image(
-                    painter = rememberAsyncImagePainter(it),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(200.dp)
-                        .padding(8.dp)
-                )
-            }
-
-            OutlinedTextField(
-                value = nombre,
-                onValueChange = { nombre = it },
-                label = { Text("Nombre del evento") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = descripcion,
-                onValueChange = { descripcion = it },
-                label = { Text("Descripción") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = direccion,
-                onValueChange = { direccion = it },
-                label = { Text("Dirección o lugar") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = duracion,
-                onValueChange = { duracion = it },
-                label = { Text("Duración (en horas)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Button(onClick = { datePicker.show() }) {
-                Text("📅 $fechaTexto")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ✔ Botón guardar
-            Button(onClick = {
-
-                val duracionHoras = duracion.toIntOrNull() ?: 0
-
-                if (
-                    nombre.isBlank() ||
-                    descripcion.isBlank() ||
-                    direccion.isBlank() ||
-                    imagePath == null
-                ) return@Button
-
-                val evento = EventoEntity(
-                    usuarioId = usuarioId,
-                    nombre = nombre,
-                    descripcion = descripcion,
-                    direccion = direccion,
-                    fecha = fecha,
-                    duracionHoras = duracionHoras,
-                    imagenUri = imagePath,   // ✔ Perfecto para Coil
-                    creadorNombre = creadorNombre,
-                    isGuardado = true
+                AnimatedTextField(
+                    value = nombre,
+                    onValueChange = { nombre = it },
+                    label = { Text("Nombre del evento") },
+                    validator = Validators::validarNombreEvento,
+                    modifier = Modifier.fillMaxWidth()
                 )
 
-                viewModel.crearEvento(evento)
-                onBack()
-            }) {
-                Text("💾 Guardar evento")
+                Spacer(Modifier.height(8.dp))
+
+                AnimatedTextField(
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción") },
+                    validator = Validators::validarDescripcion,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                AnimatedTextField(
+                    value = direccion,
+                    onValueChange = { direccion = it },
+                    label = { Text("Dirección o lugar") },
+                    validator = Validators::validarDireccion,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                AnimatedTextField(
+                    value = duracion,
+                    onValueChange = { duracion = it },
+                    label = { Text("Duración (en horas)") },
+                    validator = Validators::validarDuracion,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Button(onClick = { datePicker.show() }) {
+                    Text("📅 $fechaTexto")
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // button press animation wrapper
+                var pressed by remember { mutableStateOf(false) }
+                ClickScaleAnimation(pressed = pressed) { scale ->
+                    Button(
+                        onClick = {
+                            pressed = true
+                            // validate all fields
+                            val eNombre = Validators.validarNombreEvento(nombre)
+                            val eDesc = Validators.validarDescripcion(descripcion)
+                            val eDir = Validators.validarDireccion(direccion)
+                            val eDur = Validators.validarDuracion(duracion)
+
+                            if (eNombre == null && eDesc == null && eDir == null && eDur == null && imagePath != null) {
+                                val duracionHoras = duracion.toIntOrNull() ?: 0
+                                val evento = EventoEntity(
+                                    usuarioId = usuarioId,
+                                    nombre = nombre,
+                                    descripcion = descripcion,
+                                    direccion = direccion,
+                                    fecha = fecha,
+                                    duracionHoras = duracionHoras,
+                                    imagenUri = imagePath,
+                                    creadorNombre = creadorNombre,
+                                    isGuardado = true
+                                )
+                                viewModel.crearEvento(evento)
+                                // keep pressed visible shortly, then navigate back
+                                scope.launch {
+                                    delay(140)
+                                    pressed = false
+                                    onBack()
+                                }
+                            } else {
+                                // if any invalid, trigger a short delay to show pressed state, then reset
+                                scope.launch {
+                                    delay(180)
+                                    pressed = false
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .graphicsLayer {
+                                scaleX = scale; scaleY = scale
+                            }
+                    ) {
+                        Text("💾 Guardar evento")
+                    }
+                }
             }
         }
     }
