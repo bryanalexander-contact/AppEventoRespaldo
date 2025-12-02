@@ -14,7 +14,6 @@ import com.example.eventoapp.ui.animations.FadeInAnimation
 import com.example.eventoapp.ui.animations.ClickScaleAnimation
 import com.example.eventoapp.ui.animations.SlideDownAlert
 
-
 // ====================================================
 // EXTENSIONES NECESARIAS (shake + buttonPress + ErrorFadeIn)
 // ====================================================

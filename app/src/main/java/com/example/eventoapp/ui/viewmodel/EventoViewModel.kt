@@ -7,53 +7,98 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.eventoapp.data.Model.entities.EventoEntity
+import com.example.eventoapp.network.ApiClient
+import com.example.eventoapp.network.Evento        // API
+import com.example.eventoapp.data.Model.entities.EventoEntity   // Local
 import com.example.eventoapp.data.Model.repository.EventoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import retrofit2.Response
 import java.io.File
 import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.*
+
 
 class EventoViewModel(private val repo: EventoRepository) : ViewModel() {
 
     private val _eventos = MutableStateFlow<List<EventoEntity>>(emptyList())
     val eventos: StateFlow<List<EventoEntity>> = _eventos
 
+    private val _mensajeError = MutableStateFlow<String?>(null)
+    val mensajeError: StateFlow<String?> = _mensajeError
+
     init {
-        viewModelScope.launch {
-            repo.listarEventos().collect { lista ->
-                _eventos.value = lista
-            }
-        }
+        obtenerEventos()
     }
 
     /**
-     * Normalizamos la URI antes de guardar el evento.
+     * Obtener eventos desde microservicio y local
      */
-    fun crearEvento(evento: EventoEntity) {
-
-        val imagenNormalizada = evento.imagenUri?.let { uri ->
-            when {
-                uri.startsWith("content://") -> uri
-                uri.startsWith("file://") -> uri
-                uri.startsWith("/") -> "file://$uri"
-                else -> uri
-            }
-        }
-
-        // Creamos un nuevo objeto con la URI corregida (EventoEntity es data class, así que copy funciona).
-        val eventoCorregido = evento.copy(imagenUri = imagenNormalizada)
-
+    fun obtenerEventos() {
         viewModelScope.launch {
-            repo.crearEvento(eventoCorregido)
+            try {
+                val response = ApiClient.eventoApi.getEventos()
+                if (response.isSuccessful) {
+                    val eventosApi = response.body()?.map { e ->
+                        EventoEntity(
+                            id = e.id,
+                            usuarioId = e.usuarioId,
+                            nombre = e.nombre,
+                            descripcion = e.descripcion,
+                            direccion = e.direccion,
+                            fecha = e.fecha,
+                            duracionHoras = e.duracionHoras,
+                            imagenUri = e.imagenUri,
+                            creadorNombre = e.creadorNombre
+                        )
+                    } ?: emptyList()
+                    _eventos.value = eventosApi
+                } else {
+                    _mensajeError.value = "Error al obtener eventos: ${response.code()}"
+                }
+
+            } catch (e: Exception) {
+                _mensajeError.value = "Error de red: ${e.message}"
+            }
         }
     }
 
     /**
-     * Guarda la imagen del evento en Pictures/EventLive
+     * Crear evento y enviarlo al microservicio
+     */
+    fun crearEvento(token: String, evento: EventoEntity) {
+
+        val eventoApi = Evento(
+            id = evento.id,
+            usuarioId = evento.usuarioId,
+            nombre = evento.nombre,
+            descripcion = evento.descripcion,
+            direccion = evento.direccion,
+            fecha = evento.fecha,
+            duracionHoras = evento.duracionHoras,
+            imagenUri = evento.imagenUri,
+            creadorNombre = evento.creadorNombre
+        )
+
+        viewModelScope.launch {
+            try {
+                val response = ApiClient.eventoApi.crearEvento("Bearer $token", eventoApi)
+                if (response.isSuccessful) {
+                    // Actualizar lista local
+                    obtenerEventos()
+                } else {
+                    _mensajeError.value = "Error al crear evento: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                _mensajeError.value = "Error de red: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * Guardar imagen en almacenamiento local
      */
     fun guardarEventoLocal(context: Context, evento: EventoEntity) {
         viewModelScope.launch {

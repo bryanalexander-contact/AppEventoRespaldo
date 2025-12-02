@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.graphics.Bitmap
 import android.os.Environment
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -24,22 +26,27 @@ import com.example.eventoapp.ui.animations.FadeInAnimation
 import com.example.eventoapp.ui.components.AnimatedTextField
 import com.example.eventoapp.ui.utils.Validators
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
+import com.example.eventoapp.ui.viewmodel.UsuarioViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.OutputStream
 import java.util.*
-import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CrearEventoScreen(
     viewModel: EventoViewModel,
+    usuarioViewModel: UsuarioViewModel,
     onBack: () -> Unit,
-    usuarioId: Int = 1,
-    creadorNombre: String = "Usuario Actual"
+    usuarioIdFallback: Int = 1,
+    creadorNombreFallback: String = "Usuario Actual"
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    // Observamos usuario y token del ViewModel de usuario
+    val usuarioActual by usuarioViewModel.usuarioActual.observeAsState(null)
+    val token by usuarioViewModel.token.observeAsState(null)
 
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
@@ -66,19 +73,8 @@ fun CrearEventoScreen(
                 output?.use { stream ->
                     it.compress(Bitmap.CompressFormat.JPEG, 90, stream)
                 }
-                // try to obtain a file path if available (some devices may keep only content://)
-                val projection = arrayOf(MediaStore.Images.Media.DATA)
-                val cursor = context.contentResolver.query(realUri, projection, null, null, null)
-                cursor?.use {
-                    if (it.moveToFirst()) {
-                        val rawPath = it.getString(0)
-                        imagePath = "file://$rawPath"
-                    } else {
-                        imagePath = realUri.toString() // fallback to content://
-                    }
-                } ?: run {
-                    imagePath = realUri.toString()
-                }
+                // fallback a content:// cuando no hay path real
+                imagePath = realUri.toString()
             }
         }
     }
@@ -103,7 +99,7 @@ fun CrearEventoScreen(
                 title = { Text("Nuevo evento") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
@@ -191,23 +187,37 @@ fun CrearEventoScreen(
 
                             if (eNombre == null && eDesc == null && eDir == null && eDur == null && imagePath != null) {
                                 val duracionHoras = duracion.toIntOrNull() ?: 0
+                                val uid = usuarioActual?.id ?: usuarioIdFallback
+                                val creador = usuarioActual?.nombre ?: creadorNombreFallback
+
                                 val evento = EventoEntity(
-                                    usuarioId = usuarioId,
+                                    usuarioId = uid,
                                     nombre = nombre,
                                     descripcion = descripcion,
                                     direccion = direccion,
                                     fecha = fecha,
                                     duracionHoras = duracionHoras,
                                     imagenUri = imagePath,
-                                    creadorNombre = creadorNombre,
+                                    creadorNombre = creador,
                                     isGuardado = true
                                 )
-                                viewModel.crearEvento(evento)
-                                // keep pressed visible shortly, then navigate back
-                                scope.launch {
-                                    delay(140)
-                                    pressed = false
-                                    onBack()
+
+                                // Si no hay token, avisar que necesita iniciar sesión
+                                if (token.isNullOrEmpty()) {
+                                    Toast.makeText(context, "Debes iniciar sesión para crear eventos", Toast.LENGTH_SHORT).show()
+                                    // reset pressed visual
+                                    scope.launch {
+                                        delay(180)
+                                        pressed = false
+                                    }
+                                } else {
+                                    viewModel.crearEvento(token!!, evento)
+                                    // keep pressed visible shortly, then navigate back
+                                    scope.launch {
+                                        delay(140)
+                                        pressed = false
+                                        onBack()
+                                    }
                                 }
                             } else {
                                 // if any invalid, trigger a short delay to show pressed state, then reset

@@ -18,7 +18,6 @@ import com.example.eventoapp.ui.animations.ClickScaleAnimation
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,7 +77,6 @@ fun EventoDetalleScreen(
                     ClickScaleAnimation(pressed = pressed) { scale ->
                         Button(
                             onClick = {
-                                // usar coroutine scope en callbacks
                                 scope.launch {
                                     pressed = true
                                     viewModel.guardarEventoLocal(context, evento)

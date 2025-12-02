@@ -54,6 +54,10 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation("androidx.compose.runtime:runtime-livedata")
 
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
     // Jetpack Compose BOM (gestiona versiones compatibles)
     implementation(platform("androidx.compose:compose-bom:2024.10.00"))
 
