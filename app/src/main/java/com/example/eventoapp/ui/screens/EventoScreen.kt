@@ -71,7 +71,7 @@ fun EventoScreen(
                                 Spacer(Modifier.height(8.dp))
 
                                 evento.imagenUri?.let { uri ->
-                                    val fixedUri = if (uri.startsWith("file://")) uri else "file://$uri"
+                                    val fixedUri = uri // puede ser http(s) o content:// o file://
                                     Image(
                                         painter = rememberAsyncImagePainter(fixedUri),
                                         contentDescription = evento.nombre,

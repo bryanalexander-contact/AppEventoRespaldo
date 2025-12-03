@@ -5,26 +5,38 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiClient {
 
-    // Retrofit principal para tu backend de eventos
-    private val retrofitBackend: Retrofit by lazy {
+    // -----------------------
+    // Cambia estas URLs por las tuyas reales (IP y puertos)
+    // En tu ejemplo: eventos -> 34.224.85.71:4001, usuarios -> 34.224.85.71:4000
+    // -----------------------
+    private const val BASE_EVENTOS = "http://13.222.189.41:4001/" // <- reemplaza si necesitas https o dominio
+    private const val BASE_USUARIOS = "http://13.222.189.41:4000/"
+
+    // Retrofit para eventos
+    private val retrofitEventos: Retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("https://tu-backend.com/") // Reemplaza con tu URL real de backend
+            .baseUrl(BASE_EVENTOS)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
-    // APIs de tu backend
-    val eventoApi: EventoApi by lazy { retrofitBackend.create(EventoApi::class.java) }
-    val usuarioApi: UsuarioApi by lazy { retrofitBackend.create(UsuarioApi::class.java) }
+    // Retrofit para usuarios (auth)
+    private val retrofitUsuarios: Retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_USUARIOS)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
 
-    // Retrofit para OpenWeatherMap
+    val eventoApi: EventoApi by lazy { retrofitEventos.create(EventoApi::class.java) }
+    val usuarioApi: UsuarioApi by lazy { retrofitUsuarios.create(UsuarioApi::class.java) }
+
+    // Weather (opcional)
     private val retrofitWeather: Retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("https://api.openweathermap.org/") // URL base de clima
+            .baseUrl("https://api.openweathermap.org/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
-
-    // Weather API
     val weatherApi: WeatherApi by lazy { retrofitWeather.create(WeatherApi::class.java) }
 }

@@ -20,7 +20,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import com.example.eventoapp.data.Model.entities.EventoEntity
+import com.example.eventoapp.network.EventoCreateRequest
 import com.example.eventoapp.ui.animations.ClickScaleAnimation
 import com.example.eventoapp.ui.animations.FadeInAnimation
 import com.example.eventoapp.ui.components.AnimatedTextField
@@ -73,7 +73,6 @@ fun CrearEventoScreen(
                 output?.use { stream ->
                     it.compress(Bitmap.CompressFormat.JPEG, 90, stream)
                 }
-                // fallback a content:// cuando no hay path real
                 imagePath = realUri.toString()
             }
         }
@@ -190,7 +189,7 @@ fun CrearEventoScreen(
                                 val uid = usuarioActual?.id ?: usuarioIdFallback
                                 val creador = usuarioActual?.nombre ?: creadorNombreFallback
 
-                                val evento = EventoEntity(
+                                val request = EventoCreateRequest(
                                     usuarioId = uid,
                                     nombre = nombre,
                                     descripcion = descripcion,
@@ -198,29 +197,27 @@ fun CrearEventoScreen(
                                     fecha = fecha,
                                     duracionHoras = duracionHoras,
                                     imagenUri = imagePath,
-                                    creadorNombre = creador,
-                                    isGuardado = true
+                                    creadorNombre = creador
                                 )
 
                                 // Si no hay token, avisar que necesita iniciar sesión
                                 if (token.isNullOrEmpty()) {
                                     Toast.makeText(context, "Debes iniciar sesión para crear eventos", Toast.LENGTH_SHORT).show()
-                                    // reset pressed visual
                                     scope.launch {
                                         delay(180)
                                         pressed = false
                                     }
                                 } else {
-                                    viewModel.crearEvento(token!!, evento)
-                                    // keep pressed visible shortly, then navigate back
+                                    // llamamos al viewModel con el request
+                                    viewModel.crearEvento(token!!, request)
                                     scope.launch {
-                                        delay(140)
+                                        // pequeña espera para que la petición salga (no bloqueante)
+                                        delay(240)
                                         pressed = false
                                         onBack()
                                     }
                                 }
                             } else {
-                                // if any invalid, trigger a short delay to show pressed state, then reset
                                 scope.launch {
                                     delay(180)
                                     pressed = false

@@ -14,8 +14,8 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.eventoapp.ui.animations.CardAppearAnimation
 import com.example.eventoapp.ui.animations.FadeInAnimation
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
-import com.example.eventoapp.network.ApiClient
 import com.example.eventoapp.network.WeatherResponse
+import com.example.eventoapp.network.ApiClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -35,7 +35,7 @@ fun HomeScreen(
     var temperatura by remember { mutableStateOf<Float?>(null) }
     var climaError by remember { mutableStateOf<String?>(null) }
 
-    // Llamada a la API del clima
+    // Llamada a la API del clima (sólo demostración)
     LaunchedEffect(Unit) {
         ApiClient.weatherApi.getWeather("Santiago", "TU_API_KEY").enqueue(object : Callback<WeatherResponse> {
             override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
@@ -86,14 +86,8 @@ fun HomeScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     when {
-                        temperatura != null -> Text(
-                            "${temperatura}°C",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        climaError != null -> Text(
-                            climaError ?: "",
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        temperatura != null -> Text("${temperatura}°C", style = MaterialTheme.typography.bodyLarge)
+                        climaError != null -> Text(climaError ?: "", color = MaterialTheme.colorScheme.error)
                         else -> Text("Cargando...", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
@@ -128,7 +122,7 @@ fun HomeScreen(
                                     Spacer(Modifier.height(8.dp))
 
                                     evento.imagenUri?.let { uri ->
-                                        val fixedUri = if (uri.startsWith("file://")) uri else "file://$uri"
+                                        val fixedUri = uri
                                         Image(
                                             painter = rememberAsyncImagePainter(fixedUri),
                                             contentDescription = null,
@@ -154,7 +148,6 @@ fun HomeScreen(
     }
 }
 
-// Función para formatear fechas
 fun formatearFecha(timestamp: Long): String {
     val formato = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     return formato.format(Date(timestamp))

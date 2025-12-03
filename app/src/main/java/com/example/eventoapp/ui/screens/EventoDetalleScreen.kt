@@ -1,5 +1,9 @@
 package com.example.eventoapp.ui.screens
 
+import android.content.ContentValues
+import android.graphics.Bitmap
+import android.os.Environment
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -16,8 +20,13 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.eventoapp.ui.animations.FadeInAnimation
 import com.example.eventoapp.ui.animations.ClickScaleAnimation
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,9 +71,15 @@ fun EventoDetalleScreen(
                     .padding(16.dp)
             ) {
                 evento.imagenUri?.let { uri ->
-                    val fixedUri = if (uri.startsWith("file://")) uri else "file://$uri"
+                    val displayUri = when {
+                        uri.startsWith("http://") || uri.startsWith("https://") -> uri
+                        uri.startsWith("file://") -> uri
+                        uri.startsWith("content://") -> uri
+                        else -> uri
+                    }
+
                     Image(
-                        painter = rememberAsyncImagePainter(fixedUri),
+                        painter = rememberAsyncImagePainter(displayUri),
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -79,8 +94,13 @@ fun EventoDetalleScreen(
                             onClick = {
                                 scope.launch {
                                     pressed = true
-                                    viewModel.guardarEventoLocal(context, evento)
-                                    Toast.makeText(context, "Imagen descargada en EventLive ✅", Toast.LENGTH_SHORT).show()
+                                    // Intent: guardar imagen localmente
+                                    val ok = saveImageToMediaStore(context, displayUri)
+                                    if (ok) {
+                                        Toast.makeText(context, "Imagen guardada en la galería ✅", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "No se pudo guardar la imagen", Toast.LENGTH_SHORT).show()
+                                    }
                                     delay(140)
                                     pressed = false
                                 }
@@ -105,6 +125,56 @@ fun EventoDetalleScreen(
                 Spacer(Modifier.height(8.dp))
                 Text(evento.descripcion)
             }
+        }
+    }
+}
+
+/**
+ * Guarda una imagen que puede estar en:
+ * - content://...
+ * - file://...
+ * - http(s)://...
+ *
+ * Devuelve true si la operación completó correctamente.
+ */
+suspend fun saveImageToMediaStore(context: android.content.Context, uriString: String): Boolean {
+    return withContext(Dispatchers.IO) {
+        try {
+            val filename = "evento_${System.currentTimeMillis()}.jpg"
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/EventLive")
+            }
+
+            val resolver = context.contentResolver
+            val newUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues) ?: return@withContext false
+            val outStream: OutputStream? = resolver.openOutputStream(newUri)
+
+            outStream?.use { out ->
+                when {
+                    uriString.startsWith("http://") || uriString.startsWith("https://") -> {
+                        // Descargar desde la URL
+                        val url = URL(uriString)
+                        val input: InputStream = url.openStream()
+                        input.use { it.copyTo(out) }
+                    }
+                    uriString.startsWith("content://") || uriString.startsWith("file://") -> {
+                        val input: InputStream? = resolver.openInputStream(android.net.Uri.parse(uriString))
+                        input?.use { it.copyTo(out) }
+                    }
+                    else -> {
+                        // intentar tratar como URL
+                        val url = URL(uriString)
+                        val input: InputStream = url.openStream()
+                        input.use { it.copyTo(out) }
+                    }
+                }
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
 }

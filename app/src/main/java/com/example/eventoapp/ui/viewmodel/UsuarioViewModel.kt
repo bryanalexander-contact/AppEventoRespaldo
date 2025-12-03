@@ -7,13 +7,14 @@ import androidx.lifecycle.LiveData
 import com.example.eventoapp.network.ApiClient
 import com.example.eventoapp.network.LoginRequest
 import com.example.eventoapp.network.RegisterRequest
-import com.example.eventoapp.data.Model.entities.UsuarioEntity
+import com.example.eventoapp.network.UsuarioNetwork
 import kotlinx.coroutines.launch
 
 class UsuarioViewModel : ViewModel() {
 
-    private val _usuarioActual = MutableLiveData<UsuarioEntity?>()
-    val usuarioActual: LiveData<UsuarioEntity?> = _usuarioActual
+    // Representamos usuario actual con una estructura simple (puedes expandirla)
+    private val _usuarioActual = MutableLiveData<UsuarioNetwork?>()
+    val usuarioActual: LiveData<UsuarioNetwork?> = _usuarioActual
 
     private val _mensajeError = MutableLiveData<String?>()
     val mensajeError: LiveData<String?> = _mensajeError
@@ -21,19 +22,27 @@ class UsuarioViewModel : ViewModel() {
     private val _token = MutableLiveData<String?>()
     val token: LiveData<String?> = _token
 
-    /**
-     * Registrar usuario en microservicio
-     */
     fun registrarUsuario(nombre: String, correo: String, contrasena: String) {
         viewModelScope.launch {
             try {
-                val request = RegisterRequest(nombre, correo, contrasena)
-                val response = ApiClient.usuarioApi.register(request)
-
+                val req = RegisterRequest(nombre, correo, contrasena)
+                val response = ApiClient.usuarioApi.register(req)
                 if (response.isSuccessful) {
-                    _mensajeError.postValue("Usuario registrado correctamente")
+                    // tu API devuelve { user: { ... } }
+                    val user = response.body()?.user
+                    if (user != null) {
+                        _mensajeError.postValue("Usuario registrado correctamente")
+                        _usuarioActual.postValue(user)
+                    } else {
+                        _mensajeError.postValue("Registro exitoso pero no se devolvió usuario")
+                    }
                 } else {
-                    _mensajeError.postValue("Error al registrar: ${response.code()}")
+                    // 409 -> correo duplicado
+                    if (response.code() == 409) {
+                        _mensajeError.postValue("El correo ya existe")
+                    } else {
+                        _mensajeError.postValue("Error al registrar: ${response.code()}")
+                    }
                 }
             } catch (e: Exception) {
                 _mensajeError.postValue("Error de red: ${e.message}")
@@ -41,28 +50,28 @@ class UsuarioViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Login de usuario en microservicio
-     */
     fun login(correo: String, contrasena: String) {
         viewModelScope.launch {
             try {
-                val request = LoginRequest(correo, contrasena)
-                val response = ApiClient.usuarioApi.login(request)
-
+                val req = LoginRequest(correo, contrasena)
+                val response = ApiClient.usuarioApi.login(req)
                 if (response.isSuccessful) {
-                    val tokenRecibido = response.body()?.token
-                    if (tokenRecibido != null) {
-                        _token.postValue(tokenRecibido)
-                        _usuarioActual.postValue(UsuarioEntity(nombre = correo, correo = correo, contrasena = contrasena))
+                    val tokenRec = response.body()?.token
+                    if (tokenRec != null) {
+                        _token.postValue(tokenRec)
+                        // No estamos pidiendo usuario en login; podemos setear un objeto mínimo
+                        _usuarioActual.postValue(UsuarioNetwork(id = -1, nombre = correo, correo = correo, rol = null))
                         _mensajeError.postValue(null)
                     } else {
                         _mensajeError.postValue("No se recibió token")
                     }
                 } else {
-                    _mensajeError.postValue("Credenciales incorrectas: ${response.code()}")
+                    if (response.code() == 401) {
+                        _mensajeError.postValue("Credenciales inválidas")
+                    } else {
+                        _mensajeError.postValue("Error en login: ${response.code()}")
+                    }
                 }
-
             } catch (e: Exception) {
                 _mensajeError.postValue("Error de red: ${e.message}")
             }
@@ -74,4 +83,3 @@ class UsuarioViewModel : ViewModel() {
         _token.postValue(null)
     }
 }
-

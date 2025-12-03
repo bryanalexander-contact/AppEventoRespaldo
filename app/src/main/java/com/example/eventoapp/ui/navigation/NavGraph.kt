@@ -59,6 +59,7 @@ fun AppNavGraph(
         composable(Screen.CrearEvento.route) {
             CrearEventoScreen(
                 viewModel = eventoViewModel,
+                usuarioViewModel = usuarioViewModel, // <- CORREGIDO
                 onBack = { navController.popBackStack() }
             )
         }
@@ -69,7 +70,6 @@ fun AppNavGraph(
                 viewModel = eventoViewModel,
                 navController = navController,
                 onCrearEvento = {
-                    // Navega a la pantalla de crear evento
                     navController.navigate(Screen.CrearEvento.route)
                 }
             )

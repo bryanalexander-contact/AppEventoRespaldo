@@ -13,6 +13,7 @@ import androidx.compose.animation.core.keyframes
 import com.example.eventoapp.ui.animations.*
 import com.example.eventoapp.ui.utils.Validators
 import com.example.eventoapp.ui.viewmodel.UsuarioViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -35,29 +36,7 @@ fun LoginScreen(
 
     // Animación del botón
     var pressed by remember { mutableStateOf(false) }
-
-    // ----------------------------
-    // ANIMACIÓN SHAKE PARA INPUTS
-    // ----------------------------
-    @Composable
-    fun Modifier.shake(enabled: Boolean): Modifier {
-        val offset by animateFloatAsState(
-            targetValue = if (enabled) 18f else 0f,
-            animationSpec = keyframes {
-                durationMillis = 400
-                0f at 0
-                -14f at 50
-                14f at 100
-                -10f at 150
-                10f at 200
-                -4f at 250
-                0f at 300
-            },
-            label = "shake"
-        )
-
-        return this.offset(x = offset.dp)
-    }
+    val scope = rememberCoroutineScope()
 
     // Navegar si el login fue exitoso
     LaunchedEffect(usuarioActual) {
@@ -92,17 +71,12 @@ fun LoginScreen(
                     errorCorreo = Validators.validarCorreo(it)
                 },
                 label = { Text("Correo") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shake(errorCorreo != null),
+                modifier = Modifier.fillMaxWidth(),
                 isError = errorCorreo != null
             )
 
-            SlideDownAlert(visible = errorCorreo != null) {
-                Text(
-                    errorCorreo ?: "",
-                    color = MaterialTheme.colorScheme.error
-                )
+            if (errorCorreo != null) {
+                Text(errorCorreo ?: "", color = MaterialTheme.colorScheme.error)
             }
 
             Spacer(Modifier.height(8.dp))
@@ -118,17 +92,12 @@ fun LoginScreen(
                 },
                 label = { Text("Contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shake(errorContrasena != null),
+                modifier = Modifier.fillMaxWidth(),
                 isError = errorContrasena != null
             )
 
-            SlideDownAlert(visible = errorContrasena != null) {
-                Text(
-                    errorContrasena ?: "",
-                    color = MaterialTheme.colorScheme.error
-                )
+            if (errorContrasena != null) {
+                Text(errorContrasena ?: "", color = MaterialTheme.colorScheme.error)
             }
 
             Spacer(Modifier.height(16.dp))
@@ -150,7 +119,11 @@ fun LoginScreen(
                             usuarioViewModel.login(correo, contrasena)
                         }
 
-                        pressed = false
+                        scope.launch {
+                            // animation feel
+                            kotlinx.coroutines.delay(180)
+                            pressed = false
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -170,11 +143,8 @@ fun LoginScreen(
             // ----------------------------
             // ERROR GLOBAL DEL VIEWMODEL
             // ----------------------------
-            SlideDownAlert(visible = mensajeError != null) {
-                Text(
-                    mensajeError ?: "",
-                    color = MaterialTheme.colorScheme.error
-                )
+            if (mensajeError != null) {
+                Text(mensajeError ?: "", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
             }
         }
     }
