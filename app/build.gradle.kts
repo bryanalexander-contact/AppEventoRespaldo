@@ -15,8 +15,6 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        
     }
 
     buildTypes {
@@ -42,9 +40,7 @@ android {
         compose = true
     }
 
-    // Mantén una versión del compiler compatible con tu Kotlin (si usas Kotlin 1.9.24, 1.5.x compiler suele ser correcto).
     composeOptions {
-        // Si tienes Kotlin 1.9.24, 1.5.14 suele funcionar; si usas otra Kotlin, ajusta según la tabla de compatibilidad.
         kotlinCompilerExtensionVersion = "1.5.14"
     }
 }
@@ -56,23 +52,17 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation("androidx.compose.runtime:runtime-livedata")
 
-
+    // Retrofit & Gson
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
-    // Jetpack Compose BOM (gestiona versiones compatibles)
+    // Jetpack Compose BOM
     implementation(platform("androidx.compose:compose-bom:2024.10.00"))
-
-    // Compose UI (sin versiones explícitas, las gestiona el BOM)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-
-    // Material 3 (dejar que el BOM gestione la versión)
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material3:material3-window-size-class")
-
-    // Iconos (extended): artefacto correcto (no material3-icons-extended)
     implementation("androidx.compose.material:material-icons-extended")
 
     // Coil para Compose
@@ -98,8 +88,15 @@ dependencies {
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.10.00"))
     androidTestImplementation(libs.androidx.ui.test.junit4)
 
-    // Testing
-    testImplementation(libs.junit)
+    // Unit Testing
+    testImplementation("junit:junit:4.13.2")                         // JUnit 4
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.10")    // Kotlin assertions
+    testImplementation("io.mockk:mockk:1.13.9")                       // MockK para objetos
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3") // Coroutines test
+
+    // Android Instrumented Tests (UI)
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.5.0")
+    androidTestImplementation("io.mockk:mockk-android:1.13.9")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
