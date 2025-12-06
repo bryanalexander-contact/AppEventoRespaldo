@@ -46,6 +46,22 @@ android {
 }
 
 dependencies {
+    // Compose UI Testing - Instrumented tests (androidTest)
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.10.00"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+
+    // Unit testing
+    testImplementation("junit:junit:4.13.2")
+
+// Coroutines test
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+// MockK para mocks y coroutines
+    testImplementation("io.mockk:mockk:1.14.6")
+
     // Core Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

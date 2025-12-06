@@ -14,11 +14,6 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.eventoapp.ui.animations.CardAppearAnimation
 import com.example.eventoapp.ui.animations.FadeInAnimation
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
-import com.example.eventoapp.network.WeatherResponse
-import com.example.eventoapp.network.ApiClient
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -30,30 +25,6 @@ fun HomeScreen(
     onCrearEvento: () -> Unit
 ) {
     val eventos by viewModel.eventos.collectAsState()
-
-    // Estado clima
-    var temperatura by remember { mutableStateOf<Float?>(null) }
-    var climaError by remember { mutableStateOf<String?>(null) }
-
-    // Llamada API clima
-    LaunchedEffect(Unit) {
-        ApiClient.weatherApi.getWeather(
-            "Santiago",
-            "0ccf7f5fee495114c6664c964da3ae70"
-        ).enqueue(object : Callback<WeatherResponse> {
-            override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
-                if (response.isSuccessful) {
-                    temperatura = response.body()?.main?.temp
-                } else {
-                    climaError = "Error al obtener clima"
-                }
-            }
-
-            override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
-                climaError = "Falló la llamada: ${t.message}"
-            }
-        })
-    }
 
     Scaffold(
         topBar = {
@@ -126,29 +97,7 @@ fun HomeScreen(
                     }
                 }
 
-                // ITEM EXTRA: CLIMA AL FINAL
                 item {
-                    Spacer(Modifier.height(24.dp))
-                    Text(
-                        "Clima en Santiago 🌤",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(Modifier.height(8.dp))
-
-                    when {
-                        temperatura != null ->
-                            Text("Temperatura actual: ${temperatura}°C",
-                                style = MaterialTheme.typography.bodyLarge)
-
-                        climaError != null ->
-                            Text(climaError ?: "",
-                                color = MaterialTheme.colorScheme.error)
-
-                        else ->
-                            Text("Cargando clima...",
-                                style = MaterialTheme.typography.bodyMedium)
-                    }
-
                     Spacer(Modifier.height(48.dp))
                 }
             }
