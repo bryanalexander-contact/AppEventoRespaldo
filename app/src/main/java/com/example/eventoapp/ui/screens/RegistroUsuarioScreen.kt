@@ -43,6 +43,8 @@ fun RegistroUsuarioScreen(
         }
     }
 
+
+
     Column(
         Modifier
             .fillMaxSize()

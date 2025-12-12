@@ -10,8 +10,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.example.eventoapp.ui.animations.CardAppearAnimation
 import com.example.eventoapp.ui.animations.FadeInAnimation
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
@@ -28,19 +30,16 @@ fun EventoScreen(
 ) {
     val eventos by viewModel.eventos.collectAsState(initial = emptyList())
 
-    // ----- Estado para la "quote" (DummyJSON) -----
     var quoteText by remember { mutableStateOf<String?>(null) }
     var quoteLoading by remember { mutableStateOf(false) }
     var quoteError by remember { mutableStateOf<String?>(null) }
 
-    // Exception handler para coroutines en Compose
     val handler = remember {
         CoroutineExceptionHandler { _, throwable ->
             Log.e("EventoScreen", "Coroutine error", throwable)
         }
     }
 
-    // Función para cargar una quote (la llamamos al entrar y desde botón)
     val scope = rememberCoroutineScope()
     fun loadQuote() {
         scope.launch(handler) {
@@ -59,10 +58,13 @@ fun EventoScreen(
         }
     }
 
-    // Cargar al iniciar la pantalla
     LaunchedEffect(Unit) {
         loadQuote()
+        viewModel.obtenerEventos()
     }
+
+    val baseFallback = "http://98.88.76.248:4001"
+    val ctx = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -110,10 +112,23 @@ fun EventoScreen(
                                 Text(evento.nombre, style = MaterialTheme.typography.titleLarge)
                                 Spacer(Modifier.height(8.dp))
 
-                                evento.imagenUri?.let { uri ->
-                                    val fixedUri = uri
+                                evento.imagenUri?.let { uriRaw ->
+                                    val fixedUri = when {
+                                        uriRaw.startsWith("http://") || uriRaw.startsWith("https://") -> uriRaw
+                                        uriRaw.startsWith("content://") || uriRaw.startsWith("file://") -> uriRaw
+                                        uriRaw.startsWith("/uploads") -> "$baseFallback$uriRaw"
+                                        uriRaw.startsWith("uploads/") -> "$baseFallback/$uriRaw"
+                                        !uriRaw.contains("://") -> "$baseFallback/uploads/$uriRaw"
+                                        else -> uriRaw
+                                    }
+
+                                    val req = ImageRequest.Builder(ctx)
+                                        .data(fixedUri)
+                                        .crossfade(true)
+                                        .build()
+
                                     Image(
-                                        painter = rememberAsyncImagePainter(fixedUri),
+                                        painter = rememberAsyncImagePainter(req),
                                         contentDescription = evento.nombre,
                                         modifier = Modifier
                                             .height(200.dp)
@@ -132,7 +147,6 @@ fun EventoScreen(
                     }
                 }
 
-                // ITEM: Frase Dummy (al final)
                 item {
                     Spacer(Modifier.height(24.dp))
                     Text(
@@ -165,7 +179,6 @@ fun EventoScreen(
                             }
                         }
                         else -> {
-                            // Caso por defecto
                             Text("Sin frase disponible", modifier = Modifier.padding(8.dp))
                             Spacer(Modifier.height(8.dp))
                             Row(Modifier.padding(8.dp)) {

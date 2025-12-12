@@ -5,10 +5,11 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 data class RegisterRequest(val nombre: String, val correo: String, val contrasena: String)
-data class RegisterResponse(val user: UsuarioNetwork) // según tu node: res.status(201).json({ user: result.rows[0] })
+data class RegisterResponse(val user: UsuarioNetwork)
 
 data class LoginRequest(val correo: String, val contrasena: String)
-data class LoginResponse(val token: String)
+// Ahora login devuelve token + user
+data class LoginResponse(val token: String, val user: UsuarioNetwork?)
 
 data class UsuarioNetwork(
     val id: Int,

@@ -1,7 +1,6 @@
 package com.example.eventoapp.ui.screens
 
 import android.content.ContentValues
-import android.graphics.Bitmap
 import android.os.Environment
 import android.provider.MediaStore
 import android.widget.Toast
@@ -17,6 +16,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.example.eventoapp.ui.animations.FadeInAnimation
 import com.example.eventoapp.ui.animations.ClickScaleAnimation
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
@@ -38,6 +38,11 @@ fun EventoDetalleScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    // Cargar eventos actualizados al entrar
+    LaunchedEffect(Unit) {
+        viewModel.obtenerEventos()
+    }
+
     val eventos by viewModel.eventos.collectAsState()
     val evento = eventos.firstOrNull { it.id == eventoId }
 
@@ -49,6 +54,22 @@ fun EventoDetalleScreen(
             Text("Cargando evento...")
         }
         return
+    }
+
+    val baseFallback = "http://98.88.76.248:4001"
+
+    val displayUri = remember(evento.imagenUri) {
+        evento.imagenUri?.let { uri ->
+            when {
+                uri.startsWith("http://") || uri.startsWith("https://") -> uri
+                uri.startsWith("file://") -> uri
+                uri.startsWith("content://") -> uri
+                uri.startsWith("/uploads") -> "$baseFallback$uri"
+                uri.startsWith("uploads/") -> "$baseFallback/$uri"
+                !uri.contains("://") -> "$baseFallback/uploads/$uri"
+                else -> uri
+            }
+        }
     }
 
     Scaffold(
@@ -63,6 +84,7 @@ fun EventoDetalleScreen(
             )
         }
     ) { padding ->
+
         FadeInAnimation {
             Column(
                 modifier = Modifier
@@ -70,59 +92,73 @@ fun EventoDetalleScreen(
                     .padding(padding)
                     .padding(16.dp)
             ) {
-                evento.imagenUri?.let { uri ->
-                    val displayUri = when {
-                        uri.startsWith("http://") || uri.startsWith("https://") -> uri
-                        uri.startsWith("file://") -> uri
-                        uri.startsWith("content://") -> uri
-                        else -> uri
-                    }
+
+                // -------------------------
+                //      IMAGEN DEL EVENTO
+                // -------------------------
+                displayUri?.let { imgUrl ->
+                    val req = ImageRequest.Builder(LocalContext.current)
+                        .data(imgUrl)
+                        .crossfade(true)
+                        .build()
 
                     Image(
-                        painter = rememberAsyncImagePainter(displayUri),
-                        contentDescription = null,
+                        painter = rememberAsyncImagePainter(req),
+                        contentDescription = evento.nombre,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(250.dp)
+                            .height(260.dp)
                     )
 
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(12.dp))
 
+                    // -------------------------
+                    // BOTÓN DESCARGAR FOTO
+                    // -------------------------
                     var pressed by remember { mutableStateOf(false) }
                     ClickScaleAnimation(pressed = pressed) { scale ->
                         Button(
                             onClick = {
                                 scope.launch {
                                     pressed = true
-                                    // Intent: guardar imagen localmente
-                                    val ok = saveImageToMediaStore(context, displayUri)
+                                    val ok = saveImageToMediaStore(context, imgUrl)
                                     if (ok) {
-                                        Toast.makeText(context, "Imagen guardada en la galería ✅", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Imagen descargada en la galería ✔️", Toast.LENGTH_SHORT).show()
                                     } else {
-                                        Toast.makeText(context, "No se pudo guardar la imagen", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Error al guardar imagen", Toast.LENGTH_SHORT).show()
                                     }
-                                    delay(140)
+                                    delay(150)
                                     pressed = false
                                 }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .graphicsLayer {
-                                    scaleX = scale; scaleY = scale
-                                }
+                                .graphicsLayer { scaleX = scale; scaleY = scale }
                         ) {
                             Text("📥 Descargar foto")
                         }
                     }
 
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(20.dp))
                 }
 
-                Text("👤 Organizador: ${evento.creadorNombre}")
+                // -------------------------
+                //      DATOS DEL EVENTO
+                // -------------------------
+                Text("👤 Organizador: ${evento.creadorNombre ?: "Desconocido"}")
+                Spacer(Modifier.height(6.dp))
+
                 Text("📍 Dirección: ${evento.direccion}")
+                Spacer(Modifier.height(6.dp))
+
                 Text("🕒 Fecha: ${viewModel.formatearFecha(evento.fecha)}")
+                Spacer(Modifier.height(6.dp))
+
                 Text("⏱ Duración: ${evento.duracionHoras} horas")
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
+
+                Text("📝 Descripción:", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
                 Text(evento.descripcion)
             }
         }
@@ -131,11 +167,9 @@ fun EventoDetalleScreen(
 
 /**
  * Guarda una imagen que puede estar en:
- * - content://...
- * - file://...
- * - http(s)://...
- *
- * Devuelve true si la operación completó correctamente.
+ * - http(s)://
+ * - file://
+ * - content://
  */
 suspend fun saveImageToMediaStore(context: android.content.Context, uriString: String): Boolean {
     return withContext(Dispatchers.IO) {
@@ -148,29 +182,29 @@ suspend fun saveImageToMediaStore(context: android.content.Context, uriString: S
             }
 
             val resolver = context.contentResolver
-            val newUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues) ?: return@withContext false
+            val newUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                ?: return@withContext false
+
             val outStream: OutputStream? = resolver.openOutputStream(newUri)
 
             outStream?.use { out ->
+
                 when {
-                    uriString.startsWith("http://") || uriString.startsWith("https://") -> {
-                        // Descargar desde la URL
-                        val url = URL(uriString)
-                        val input: InputStream = url.openStream()
+                    uriString.startsWith("http") -> {
+                        val input: InputStream = URL(uriString).openStream()
                         input.use { it.copyTo(out) }
                     }
                     uriString.startsWith("content://") || uriString.startsWith("file://") -> {
-                        val input: InputStream? = resolver.openInputStream(android.net.Uri.parse(uriString))
+                        val input = resolver.openInputStream(android.net.Uri.parse(uriString))
                         input?.use { it.copyTo(out) }
                     }
-                    else -> {
-                        // intentar tratar como URL
-                        val url = URL(uriString)
-                        val input: InputStream = url.openStream()
+                    else -> { // Último fallback
+                        val input: InputStream = URL(uriString).openStream()
                         input.use { it.copyTo(out) }
                     }
                 }
             }
+
             true
         } catch (e: Exception) {
             e.printStackTrace()

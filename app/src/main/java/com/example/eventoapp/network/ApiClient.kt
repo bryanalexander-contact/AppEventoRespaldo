@@ -8,8 +8,8 @@ object ApiClient {
     // -----------------------
     // Cambia estas URLs por las tuyas reales (IP y puertos)
     // -----------------------
-    private const val BASE_EVENTOS = "http://54.221.84.31:4001/"
-    private const val BASE_USUARIOS = "http://54.221.84.31:4000/"
+    private const val BASE_EVENTOS = "http://98.88.76.248:4001/"
+    private const val BASE_USUARIOS = "http://98.88.76.248:4000/"
 
     private val retrofitEventos: Retrofit by lazy {
         Retrofit.Builder()
@@ -35,5 +35,4 @@ object ApiClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
-
 }

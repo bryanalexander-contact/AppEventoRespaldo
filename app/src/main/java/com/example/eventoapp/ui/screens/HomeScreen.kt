@@ -9,8 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.example.eventoapp.ui.animations.CardAppearAnimation
 import com.example.eventoapp.ui.animations.FadeInAnimation
 import com.example.eventoapp.ui.viewmodel.EventoViewModel
@@ -25,6 +27,8 @@ fun HomeScreen(
     onCrearEvento: () -> Unit
 ) {
     val eventos by viewModel.eventos.collectAsState()
+    val baseFallback = "http://98.88.76.248:4001"
+    val ctx = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -48,8 +52,6 @@ fun HomeScreen(
                     .padding(16.dp)
                     .fillMaxSize()
             ) {
-
-                // Si no hay eventos
                 if (eventos.isEmpty()) {
                     item {
                         Text(
@@ -60,7 +62,6 @@ fun HomeScreen(
                     }
                 }
 
-                // Tarjetas de evento
                 itemsIndexed(eventos) { index, evento ->
                     CardAppearAnimation(index = index) {
                         Card(
@@ -76,9 +77,21 @@ fun HomeScreen(
                                 Text(evento.nombre, style = MaterialTheme.typography.titleLarge)
                                 Spacer(Modifier.height(8.dp))
 
-                                evento.imagenUri?.let { uri ->
+                                evento.imagenUri?.let { uriRaw ->
+                                    val fixedUri = when {
+                                        uriRaw.startsWith("http://") || uriRaw.startsWith("https://") -> uriRaw
+                                        uriRaw.startsWith("content://") || uriRaw.startsWith("file://") -> uriRaw
+                                        uriRaw.startsWith("/uploads") -> "$baseFallback$uriRaw"
+                                        uriRaw.startsWith("uploads/") -> "$baseFallback/$uriRaw"
+                                        !uriRaw.contains("://") -> "$baseFallback/uploads/$uriRaw"
+                                        else -> uriRaw
+                                    }
+                                    val req = ImageRequest.Builder(ctx)
+                                        .data(fixedUri)
+                                        .crossfade(true)
+                                        .build()
                                     Image(
-                                        painter = rememberAsyncImagePainter(uri),
+                                        painter = rememberAsyncImagePainter(req),
                                         contentDescription = null,
                                         modifier = Modifier
                                             .height(200.dp)

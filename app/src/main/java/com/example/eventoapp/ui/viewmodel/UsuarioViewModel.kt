@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 
 class UsuarioViewModel : ViewModel() {
 
-    // Representamos usuario actual con una estructura simple (puedes expandirla)
     private val _usuarioActual = MutableLiveData<UsuarioNetwork?>()
     val usuarioActual: LiveData<UsuarioNetwork?> = _usuarioActual
 
@@ -28,7 +27,6 @@ class UsuarioViewModel : ViewModel() {
                 val req = RegisterRequest(nombre, correo, contrasena)
                 val response = ApiClient.usuarioApi.register(req)
                 if (response.isSuccessful) {
-                    // tu API devuelve { user: { ... } }
                     val user = response.body()?.user
                     if (user != null) {
                         _mensajeError.postValue("Usuario registrado correctamente")
@@ -37,7 +35,6 @@ class UsuarioViewModel : ViewModel() {
                         _mensajeError.postValue("Registro exitoso pero no se devolvió usuario")
                     }
                 } else {
-                    // 409 -> correo duplicado
                     if (response.code() == 409) {
                         _mensajeError.postValue("El correo ya existe")
                     } else {
@@ -56,11 +53,18 @@ class UsuarioViewModel : ViewModel() {
                 val req = LoginRequest(correo, contrasena)
                 val response = ApiClient.usuarioApi.login(req)
                 if (response.isSuccessful) {
-                    val tokenRec = response.body()?.token
+                    val body = response.body()
+                    val tokenRec = body?.token
+                    val user = body?.user
                     if (tokenRec != null) {
                         _token.postValue(tokenRec)
-                        // No estamos pidiendo usuario en login; podemos setear un objeto mínimo
-                        _usuarioActual.postValue(UsuarioNetwork(id = -1, nombre = correo, correo = correo, rol = null))
+                        if (user != null) {
+                            // ahora guardamos el usuario real con su id
+                            _usuarioActual.postValue(user)
+                        } else {
+                            // fallback razonable: usar correo si el user no vino (muy raro)
+                            _usuarioActual.postValue(UsuarioNetwork(id = -1, nombre = correo, correo = correo, rol = null))
+                        }
                         _mensajeError.postValue(null)
                     } else {
                         _mensajeError.postValue("No se recibió token")
