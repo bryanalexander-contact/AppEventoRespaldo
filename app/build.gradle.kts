@@ -46,21 +46,18 @@ android {
 }
 
 dependencies {
-    // Compose UI Testing - Instrumented tests (androidTest)
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.10.00"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-
-    // Unit testing
-    testImplementation("junit:junit:4.13.2")
-
-// Coroutines test
+    // Coroutines test
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 
-// MockK para mocks y coroutines
-    testImplementation("io.mockk:mockk:1.14.6")
+// MockK
+    testImplementation("io.mockk:mockk:1.13.9")
+
+// JUnit4 (si usas las anotaciones @Before/@After/@Test como en el archivo)
+    testImplementation("junit:junit:4.13.2")
+
+// Retrofit/OkHttp (ya deberías tener retrofit impl; si toResponseBody falla añadir)
+    testImplementation("com.squareup.okhttp3:okhttp:4.10.0")
 
     // Core Android
     implementation(libs.androidx.core.ktx)
@@ -100,19 +97,40 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // Android Tests
+    // Android Tests (instrumented / UI)
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.10.00"))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
-
-    // Unit Testing
-    testImplementation("junit:junit:4.13.2")                         // JUnit 4
-    testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.10")    // Kotlin assertions
-    testImplementation("io.mockk:mockk:1.13.9")                       // MockK para objetos
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3") // Coroutines test
-
-    // Android Instrumented Tests (UI)
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.5.0")
     androidTestImplementation("io.mockk:mockk-android:1.13.9")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+
+    // -----------------------
+    // Testing - Unit tests
+    // -----------------------
+    // JUnit 4 (legacy / some libraries)
+    testImplementation("junit:junit:4.13.2")
+
+    // Coroutines test
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+    // MockK para mocks
+    testImplementation("io.mockk:mockk:1.13.9")
+
+    // JUnit 5 (Jupiter) - enable if you want to run tests on the JUnit Platform
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.9.2")
+
+    // Assertions (Kotest assertions)
+    testImplementation("io.kotest:kotest-assertions-core:5.8.0")
+
+    // Turbine (opcional, útil para testing de Flow)
+    testImplementation("app.cash.turbine:turbine:0.12.1")
+
+    // Coroutines + MockK duplicates from original removed to avoid version conflicts.
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }
