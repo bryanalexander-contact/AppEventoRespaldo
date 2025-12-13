@@ -1,7 +1,5 @@
 package com.example.eventoapp.ui.utils
 
-import android.util.Patterns
-
 object Validators {
 
     // ---------- Usuario / Registro / Login ----------
@@ -14,7 +12,9 @@ object Validators {
 
     fun validarCorreo(correo: String): String? {
         if (correo.isBlank()) return "El correo no puede estar vacío"
-        if (!Patterns.EMAIL_ADDRESS.matcher(correo).matches()) return "Formato de correo inválido"
+        // Regex simple, portable a JVM y Android. Cubre la mayoría de casos razonables.
+        val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$")
+        if (!emailRegex.matches(correo)) return "Formato de correo inválido"
         return null
     }
 

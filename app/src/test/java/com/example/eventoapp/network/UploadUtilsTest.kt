@@ -1,6 +1,5 @@
 package com.example.eventoapp.network
 
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -11,6 +10,7 @@ class UploadUtilsTest {
         val rb = UploadUtils.createPartFromString("hola")
         val ct = rb.contentType()
         assertNotNull(ct)
-        assertEquals("text/plain", ct?.toString())
+        // puede incluir charset (ej. "text/plain; charset=utf-8") — comprobamos que empiece por text/plain
+        assertTrue(ct.toString().startsWith("text/plain"))
     }
 }
