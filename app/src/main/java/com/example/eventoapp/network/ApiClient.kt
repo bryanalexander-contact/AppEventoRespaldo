@@ -8,8 +8,8 @@ object ApiClient {
     // -----------------------
     // Cambia estas URLs por las tuyas reales (IP y puertos)
     // -----------------------
-    private const val BASE_EVENTOS = "http://98.88.76.248:4001/"
-    private const val BASE_USUARIOS = "http://98.88.76.248:4000/"
+    private const val BASE_EVENTOS = "http://3.91.44.82:4001/"
+    private const val BASE_USUARIOS = "http://3.91.44.82:4000/"
 
     private val retrofitEventos: Retrofit by lazy {
         Retrofit.Builder()
